@@ -6,18 +6,16 @@
 
 Ultrasonic ultrasonic(2, 3);
 
-const uint8_t motorLaPin = 10;
-const uint8_t motorLbPin = 9;
-const uint8_t motorRaPin = 6;
-const uint8_t motorRbPin = 5;
+const uint8_t motorLPins[2] = {10, 9};
+const uint8_t motorRPins[2] = {6, 5};
 
 const uint8_t maxSpeed = 100;
 
-const int8_t motorTuning = -5;
+const int8_t motorTuningLeftToRight = -5;
 
 void motorL(int8_t d);
 void motorR(int8_t d);
-int16_t angleZ();
+int16_t angleZ(); // 0 to 359
 
 enum FSMstates {
   initState,
@@ -32,8 +30,8 @@ enum FSMstates {
 FSMstates state = initState;
 
 
-uint16_t minDistance = 300;
-int16_t minAngle = 0;
+uint16_t smallestDistance = 300;
+int16_t angleOfSmallestDistance = 0;
 int16_t angleOffset = 0;
 
 void setup() {
@@ -51,8 +49,8 @@ void loop() {
 
       case startSearchState:
       angleOffset = angleZ();
-      minDistance = 300;
-      minAngle = angleOffset;
+      smallestDistance = 300;
+      angleOfSmallestDistance = angleOffset;
       motorL(-100);
       motorR(100);
       state = searchState;
@@ -62,9 +60,9 @@ void loop() {
     case searchState: {
       uint16_t distance = ultrasonic.read();
       int16_t angle = angleZ();
-      if (distance < minDistance) {
-        minDistance = distance;
-        minAngle = angle;
+      if (distance < smallestDistance) {
+        smallestDistance = distance;
+        angleOfSmallestDistance = angle;
       }
 
       if (angleZ()-angleOffset >= 360) {
@@ -103,42 +101,42 @@ void loop() {
 
 void motorL(int8_t d) {
   d = constrain(d, -100, 100);
-  int speed = 255 - ((int16_t)d * maxSpeed)/100 + motorTuning;
+  int speed = 255 - ((int16_t)d * maxSpeed)/100 + motorTuningLeftToRight;
   if (d > 0) {
     // forward
-    digitalWrite(motorLaPin, LOW);
-    analogWrite(motorLbPin, speed);
+    digitalWrite(motorLPins[0], LOW);
+    analogWrite(motorLPins[1], speed);
   } else if (d < 0) {
     // backward
-    analogWrite(motorLaPin, speed);
-    digitalWrite(motorLbPin, LOW);
+    analogWrite(motorLPins[0], speed);
+    digitalWrite(motorLPins[1], LOW);
   } else {
     // stop
-    digitalWrite(motorLaPin, LOW);
-    digitalWrite(motorLbPin, LOW);
+    digitalWrite(motorLPins[0], LOW);
+    digitalWrite(motorLPins[1], LOW);
   }
 }
 
 void motorR(int8_t d) {
   d = constrain(d, -100, 100);
-  int speed = 255 - ((int16_t)d * maxSpeed)/100 - motorTuning;
+  int speed = 255 - ((int16_t)d * maxSpeed)/100 - motorTuningLeftToRight;
   Serial.println(speed);
   if (d > 0) {
     // forward
-    digitalWrite(motorRaPin, LOW);
-    analogWrite(motorRbPin, speed);
+    digitalWrite(motorRPins[0], LOW);
+    analogWrite(motorRPins[1], speed);
   } else if (d < 0) {
     // backward
-    analogWrite(motorRaPin, speed);
-    digitalWrite(motorRbPin, LOW);
+    analogWrite(motorRPins[0], speed);
+    digitalWrite(motorRPins[1], LOW);
   } else {
     // stop
-    digitalWrite(motorRaPin, LOW);
-    digitalWrite(motorRbPin, LOW);
+    digitalWrite(motorRPins[0], LOW);
+    digitalWrite(motorRPins[1], LOW);
   }
 }
 
 int16_t angleZ() {
-  //mpu.GetAngZ()+180;
+  //mpu.GetAngZ()+179;
   return 0;
 }
