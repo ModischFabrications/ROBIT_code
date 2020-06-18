@@ -9,12 +9,12 @@ Ultrasonic ultrasonic(2, 3);
 const uint8_t motorLPins[2] = {10, 9};
 const uint8_t motorRPins[2] = {6, 5};
 
-const uint8_t maxSpeed = 100;
+const uint8_t maxPWMSpeed = 100; // 0 to 255
 
 const int8_t motorTuningLeftToRight = -5;
 
-void motorL(int8_t d);
-void motorR(int8_t d);
+void motorL(float d); // -1 to 1
+void motorR(float d); // -1 to 1
 int16_t angleZ(); // 0 to 359
 
 enum FSMstates {
@@ -99,9 +99,9 @@ void loop() {
 
 
 
-void motorL(int8_t d) {
-  d = constrain(d, -100, 100);
-  int speed = 255 - ((int16_t)d * maxSpeed)/100 + motorTuningLeftToRight;
+void motorL(float d) {
+  d = constrain(d, -1, 1);
+  int speed = 255 - d * maxPWMSpeed + motorTuningLeftToRight;
   if (d > 0) {
     // forward
     digitalWrite(motorLPins[0], LOW);
@@ -117,9 +117,9 @@ void motorL(int8_t d) {
   }
 }
 
-void motorR(int8_t d) {
-  d = constrain(d, -100, 100);
-  int speed = 255 - ((int16_t)d * maxSpeed)/100 - motorTuningLeftToRight;
+void motorR(float d) {
+  d = constrain(d, -1, 1);
+  int speed = 255 - d * maxPWMSpeed - motorTuningLeftToRight;
   Serial.println(speed);
   if (d > 0) {
     // forward
