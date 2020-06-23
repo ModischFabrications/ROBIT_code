@@ -4,7 +4,7 @@
 
 MPU6050 mpu(Wire);
 
-Ultrasonic ultrasonic(2, 3);
+Ultrasonic ultrasonic;
 
 const uint8_t motorLPins[2] = {10, 9};
 const uint8_t motorRPins[2] = {6, 5};
@@ -59,7 +59,7 @@ void loop() {
     break;
 
     case searchState: {
-      uint16_t distance = ultrasonic.read();
+      uint16_t distance = ultrasonic.get_distance();
       int16_t angle = angleZ();
       if (distance < smallestDistance) {
         smallestDistance = distance;
