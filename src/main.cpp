@@ -1,8 +1,8 @@
 #include <Arduino.h>
-//#include <TinyMPU6050.h>
+#include <TinyMPU6050.h>
 #include <Ultrasonic.h>
 
-//MPU6050 mpu(Wire);
+MPU6050 mpu(Wire);
 
 Ultrasonic ultrasonic(2, 3);
 
@@ -36,11 +36,12 @@ int16_t angleOffset = 0;
 
 void setup() {
   Serial.begin(115200);
-  //mpu.Initialize();
+  mpu.Initialize();
+  //mpu.Calibrate();
 }
 
 void loop() {
-  //mpu.update();
+  mpu.Execute();
 
   switch (state) {
     case initState: {
@@ -137,6 +138,5 @@ void motorR(float d) {
 }
 
 int16_t angleZ() {
-  //mpu.GetAngZ()+179;
-  return 0;
+  return mpu.GetAngZ()+179;
 }
