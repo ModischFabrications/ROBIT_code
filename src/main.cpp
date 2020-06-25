@@ -16,6 +16,7 @@ int16_t angleZ(); // 0 to 359
 enum FSMstates {
     initState,
     searchState,
+    alignToTargetState,
     approachState,
     reverseState,
     pickupState,
@@ -25,12 +26,12 @@ enum FSMstates {
 
 volatile FSMstates state = initState;
 
-const uint16_t targetLoopDuration = 10;
+const uint16_t targetLoopDuration = 20;
 uint32_t lastLoopTime = 0;
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
-int16_t angleOffset = 0;
+int16_t initial_angle = 0;
 
 const uint16_t reverseForMS = 2000;
 volatile uint32_t reverseUntilTime = 0;
@@ -38,21 +39,29 @@ volatile uint32_t reverseUntilTime = 0;
 const uint8_t pickupDistance = 5;
 
 void startSearch() {
-    angleOffset = angleZ();
+    initial_angle = angleZ();
     smallestDistanceFound = ultrasonic.MAX_DISTANCE;
-    angleOfSmallestDistance = angleOffset;
-    motor.setLeftSpeed(-1);
-    motor.setRightSpeed(1);
+    angleOfSmallestDistance = initial_angle;
+    motor.setLeftSpeed(-0.1);
+    motor.setRightSpeed(0.1);
 
     state = searchState;
 }
 
 void startReverse() {
-    motor.setLeftSpeed(-1);
-    motor.setRightSpeed(-1);
+    motor.setLeftSpeed(-0.5);
+    motor.setRightSpeed(-0.5);
     reverseUntilTime = millis() + reverseForMS;
 
     state = reverseState;
+}
+
+void startAlign() {
+    // TODO: find shortest turn direction
+    motor.setLeftSpeed(-0.1);
+    motor.setRightSpeed(0.1);
+
+    state = alignToTargetState;
 }
 
 void startApproach() {
@@ -60,6 +69,13 @@ void startApproach() {
     motor.setRightSpeed(1);
 
     state = approachState;
+}
+
+void startPickup() {
+    motor.setLeftSpeed(0);
+    motor.setRightSpeed(0);
+
+    state = pickupState;
 }
 
 void line_found() {
@@ -90,32 +106,48 @@ void loop() {
     } break;
 
     case searchState: {
-        uint16_t distance = ultrasonic.get_distance();
-        int16_t angle = angleZ();
-        if (distance < smallestDistanceFound) {
-            smallestDistanceFound = distance;
-            angleOfSmallestDistance = angle;
+        uint16_t current_distance = ultrasonic.get_distance();
+        int16_t current_angle = angleZ();
+        if (current_distance < smallestDistanceFound) {
+            // found something closer
+            smallestDistanceFound = current_distance;
+            angleOfSmallestDistance = current_angle;
         }
 
-        if (angleZ() - angleOffset >= 360) {
+        if (angleZ() - initial_angle >= 360) {
+            // full rotation
+            if (smallestDistanceFound == ultrasonic.MAX_DISTANCE) {
+                // nothing found
+                // TODO: random move to new search position
+                return;
+            }
+            startAlign();
+        }
+
+
+    } break;
+
+    case alignToTargetState: {
+        // turn to face shortest distance
+        // TODO: approximated comparison, won't hit exact angle
+        if (angleZ() == angleOfSmallestDistance) {
             startApproach();
         }
-
-        // TODO: nothing found?
 
     } break;
 
     case approachState: {
         uint16_t distance = ultrasonic.get_distance();
 
-        // lost it again
         if (distance == ultrasonic.MAX_DISTANCE) {
+            // lost it again
             startSearch();
             return;
         }
 
         if (distance <= pickupDistance) {
-            startSearch();
+            // reached it
+            startPickup();
             return;
         }
 
@@ -123,19 +155,23 @@ void loop() {
 
     case reverseState: {
         if (millis() > reverseUntilTime)
-            state = searchState;
+            // revert everything and try again, we messed up somewhere before
+            startSearch();
     } break;
 
     case pickupState: {
-        // TODO: try to pick it up multiple times
+        // TODO: try to pick it up multiple times, reposition if unsuccessful
     } break;
 
     case returnState: {
         // wait for interrupt
+        delay(10);
     } break;
 
     case finalState: {
         // done.
+        // TODO: notify user
+        delay(1000);
     } break;
     }
 
