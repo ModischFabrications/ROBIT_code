@@ -5,7 +5,7 @@
 class Ultrasonic {
   private:
     const uint8_t PIN_TRG = 8;
-    const uint8_t PIN_ECHO = 9;
+    const uint8_t PIN_ECHO = 7;
 
   public:
     const float SOUND_SPEED = 29.1545f;
@@ -34,6 +34,8 @@ class Ultrasonic {
         // travel time in us, limit to max range (<200cm reasonable)
         uint32_t duration = pulseIn(PIN_ECHO, HIGH, MAX_TIME);
 
+        duration = (duration > 0) ? duration : MAX_TIME;
+
         // TODO: wait remaining time for constant execution time
 
         return duration;
@@ -51,7 +53,7 @@ class Ultrasonic {
     uint8_t get_min_distance() const {
         uint8_t min_distance = MAX_DISTANCE;
 
-        for (uint8_t i = 0; i < 10; i++) {
+        for (uint8_t i = 0; i < 100; i++) {
             uint8_t this_dist = get_distance();
             if (this_dist < min_distance)
                 min_distance = this_dist;

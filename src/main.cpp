@@ -1,17 +1,24 @@
 #include <Arduino.h>
-#include <TinyMPU6050.h>
+//#include <TinyMPU6050.h>
+#include <MPU6050_tockn.h>
 
 #include "Motors.h"
 #include "Ultrasonic.h"
 
-MPU6050 mpu(Wire);
+#ifdef DEBUG
+const bool USE_SERIAL = true;
+#else
+const bool USE_SERIAL = false;
+#endif
+
+MPU6050 mpu6050(Wire);
 
 Ultrasonic ultrasonic;
 Motors motor;
 
 const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
 
-int16_t angleZ(); // 0 to 359
+int16_t angleZ(); // positive values in clockwise direction
 
 enum FSMstates {
     initState,
@@ -33,7 +40,7 @@ uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
 
-const uint16_t reverseForMS = 2000;
+const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
@@ -42,8 +49,8 @@ void startSearch() {
     initial_angle = angleZ();
     smallestDistanceFound = ultrasonic.MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
-    motor.setLeftSpeed(-0.1);
-    motor.setRightSpeed(0.1);
+    motor.setLeftSpeed(0.5);
+    motor.setRightSpeed(-0.5);
 
     state = searchState;
 }
@@ -65,8 +72,8 @@ void startAlign() {
 }
 
 void startApproach() {
-    motor.setLeftSpeed(1);
-    motor.setRightSpeed(1);
+    motor.setLeftSpeed(0.1);
+    motor.setRightSpeed(0.1);
 
     state = approachState;
 }
@@ -79,6 +86,7 @@ void startPickup() {
 }
 
 void line_found() {
+    Serial.println("line_found");
     if (state == returnState) {
         state = finalState;
         // done!
@@ -89,16 +97,38 @@ void line_found() {
     startReverse();
 }
 
+void driveTest() {
+  while(1) {
+    float i = -1;
+    for (; i < 1; i += 0.1) {
+      motor.setRightSpeed(i);
+      motor.setLeftSpeed(i);
+      delay(500);
+    }
+  }
+}
+
 void setup() {
-    Serial.begin(115200);
-    mpu.Initialize();
-    // mpu.Calibrate();
+    if (USE_SERIAL) { Serial.begin(115200); }
+
+    mpu6050.begin();
+
+    delay(100);
+    //mpu6050.calcGyroOffsets(true);
+    mpu6050.setGyroOffsets(-2.70, 0.94, -0.40);
+    delay(100);
 
     attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
+    //driveTest();
 }
 
 void loop() {
-    mpu.Execute();
+    mpu6050.update();
+
+    if (USE_SERIAL) {
+      Serial.print("state: ");
+      Serial.println(state);
+    }
 
     switch (state) {
     case initState: {
@@ -113,7 +143,6 @@ void loop() {
             smallestDistanceFound = current_distance;
             angleOfSmallestDistance = current_angle;
         }
-
         if (angleZ() - initial_angle >= 360) {
             // full rotation
             if (smallestDistanceFound == ultrasonic.MAX_DISTANCE) {
@@ -137,7 +166,7 @@ void loop() {
     } break;
 
     case approachState: {
-        uint16_t distance = ultrasonic.get_distance();
+        uint16_t distance = ultrasonic.get_min_distance();
 
         if (distance == ultrasonic.MAX_DISTANCE) {
             // lost it again
@@ -179,4 +208,4 @@ void loop() {
     delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
 }
 
-int16_t angleZ() { return mpu.GetAngZ() + 179; }
+int16_t angleZ() { return mpu6050.getAngleZ(); }
