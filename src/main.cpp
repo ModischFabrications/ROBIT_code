@@ -133,6 +133,8 @@ void setup() {
 
     attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
     //driveTest();
+
+    lights.helloPower();
 }
 
 void loop() {

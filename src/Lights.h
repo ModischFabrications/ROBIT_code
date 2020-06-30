@@ -13,6 +13,8 @@ class Lights {
 
     const uint16_t MAX_MILLIAMPS = 300;
 
+    const uint16_t T_ANIMATION_MS = (1 * 1000);
+
     CRGB leds[N_LEDS];
 
   public:
@@ -28,13 +30,22 @@ class Lights {
         FastLED.show();
     }
 
+    // flash leds one by one
+    void helloPower() {
+        // TODO: use fading, might want to reuse clock functions
+        // might even want to use a rainbow fade? -> check FastLED buildin animations
+        for (uint8_t i = 0; i < N_LEDS; i++) {
+            leds[i] = CRGB::White;
+            FastLED.show();
+            delay(T_ANIMATION_MS / N_LEDS);
+            leds[i] = CRGB::Black;
+        }
+    }
+
     /**
      * Use this delay to ensure correct display of lights
      * */
-    void delay(uint32_t time_ms) {
-        FastLED.delay(time_ms);
-    }
+    void delay(uint32_t time_ms) { FastLED.delay(time_ms); }
 
     // TODO: allow access to fastled methods? indirection here gives no value ...
-
 };
