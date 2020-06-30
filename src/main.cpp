@@ -1,142 +1,211 @@
 #include <Arduino.h>
-#include <TinyMPU6050.h>
-#include <Ultrasonic.h>
+//#include <TinyMPU6050.h>
+#include <MPU6050_tockn.h>
 
-MPU6050 mpu(Wire);
+#include "Motors.h"
+#include "Ultrasonic.h"
 
-Ultrasonic ultrasonic(2, 3);
+#ifdef DEBUG
+const bool USE_SERIAL = true;
+#else
+const bool USE_SERIAL = false;
+#endif
 
-const uint8_t motorLPins[2] = {10, 9};
-const uint8_t motorRPins[2] = {6, 5};
+MPU6050 mpu6050(Wire);
 
-const uint8_t maxPWMSpeed = 100; // 0 to 255
+Ultrasonic ultrasonic;
+Motors motor;
 
-const int8_t motorTuningLeftToRight = -5;
+const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
 
-void motorL(float d); // -1 to 1
-void motorR(float d); // -1 to 1
-int16_t angleZ(); // 0 to 359
+int16_t angleZ(); // positive values in clockwise direction
 
 enum FSMstates {
-  initState,
-  startSearchState,
-  searchState,
-  driveForwardState,
-  pickupState,
-  returnState,
-  finalState
+    initState,
+    searchState,
+    alignToTargetState,
+    approachState,
+    reverseState,
+    pickupState,
+    returnState,
+    finalState
 };
 
-FSMstates state = initState;
+volatile FSMstates state = initState;
 
+const uint16_t targetLoopDuration = 20;
+uint32_t lastLoopTime = 0;
 
-uint16_t smallestDistance = 300;
+uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
-int16_t angleOffset = 0;
+int16_t initial_angle = 0;
+
+const uint16_t reverseForMS = 1000;
+volatile uint32_t reverseUntilTime = 0;
+
+const uint8_t pickupDistance = 5;
+
+void startSearch() {
+    initial_angle = angleZ();
+    smallestDistanceFound = ultrasonic.MAX_DISTANCE;
+    angleOfSmallestDistance = initial_angle;
+    motor.setLeftSpeed(0.5);
+    motor.setRightSpeed(-0.5);
+
+    state = searchState;
+}
+
+void startReverse() {
+    motor.setLeftSpeed(-0.5);
+    motor.setRightSpeed(-0.5);
+    reverseUntilTime = millis() + reverseForMS;
+
+    state = reverseState;
+}
+
+void startAlign() {
+    // TODO: find shortest turn direction
+    motor.setLeftSpeed(-0.1);
+    motor.setRightSpeed(0.1);
+
+    state = alignToTargetState;
+}
+
+void startApproach() {
+    motor.setLeftSpeed(0.1);
+    motor.setRightSpeed(0.1);
+
+    state = approachState;
+}
+
+void startPickup() {
+    motor.setLeftSpeed(0);
+    motor.setRightSpeed(0);
+
+    state = pickupState;
+}
+
+void line_found() {
+    Serial.println("line_found");
+    if (state == returnState) {
+        state = finalState;
+        // done!
+        return;
+    }
+
+    // assume we only hit the line on forward movements
+    startReverse();
+}
+
+void driveTest() {
+  while(1) {
+    float i = -1;
+    for (; i < 1; i += 0.1) {
+      motor.setRightSpeed(i);
+      motor.setLeftSpeed(i);
+      delay(500);
+    }
+  }
+}
 
 void setup() {
-  Serial.begin(115200);
-  mpu.Initialize();
-  //mpu.Calibrate();
+    if (USE_SERIAL) { Serial.begin(115200); }
+
+    mpu6050.begin();
+
+    delay(100);
+    //mpu6050.calcGyroOffsets(true);
+    mpu6050.setGyroOffsets(-2.70, 0.94, -0.40);
+    delay(100);
+
+    attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
+    //driveTest();
 }
 
 void loop() {
-  mpu.Execute();
+    mpu6050.update();
 
-  switch (state) {
-    case initState: {
-      state = startSearchState;
-      break;
-
-      case startSearchState:
-      angleOffset = angleZ();
-      smallestDistance = 300;
-      angleOfSmallestDistance = angleOffset;
-      motorL(-100);
-      motorR(100);
-      state = searchState;
+    if (USE_SERIAL) {
+      Serial.print("state: ");
+      Serial.println(state);
     }
-    break;
+
+    switch (state) {
+    case initState: {
+        startSearch();
+    } break;
 
     case searchState: {
-      uint16_t distance = ultrasonic.read();
-      int16_t angle = angleZ();
-      if (distance < smallestDistance) {
-        smallestDistance = distance;
-        angleOfSmallestDistance = angle;
-      }
+        uint16_t current_distance = ultrasonic.get_distance();
+        int16_t current_angle = angleZ();
+        if (current_distance < smallestDistanceFound) {
+            // found something closer
+            smallestDistanceFound = current_distance;
+            angleOfSmallestDistance = current_angle;
+        }
+        if (angleZ() - initial_angle >= 360) {
+            // full rotation
+            if (smallestDistanceFound == ultrasonic.MAX_DISTANCE) {
+                // nothing found
+                // TODO: random move to new search position
+                return;
+            }
+            startAlign();
+        }
 
-      if (angleZ()-angleOffset >= 360) {
-        state = driveForwardState;
-      }
 
-    }
-    break;
+    } break;
 
-    case driveForwardState: {
-      motorL(100);
-      motorR(100);
-    }
-    break;
+    case alignToTargetState: {
+        // turn to face shortest distance
+        // TODO: approximated comparison, won't hit exact angle
+        if (angleZ() == angleOfSmallestDistance) {
+            startApproach();
+        }
+
+    } break;
+
+    case approachState: {
+        uint16_t distance = ultrasonic.get_min_distance();
+
+        if (distance == ultrasonic.MAX_DISTANCE) {
+            // lost it again
+            startSearch();
+            return;
+        }
+
+        if (distance <= pickupDistance) {
+            // reached it
+            startPickup();
+            return;
+        }
+
+    } break;
+
+    case reverseState: {
+        if (millis() > reverseUntilTime)
+            // revert everything and try again, we messed up somewhere before
+            startSearch();
+    } break;
 
     case pickupState: {
-
-    }
-    break;
+        // TODO: try to pick it up multiple times, reposition if unsuccessful
+    } break;
 
     case returnState: {
-
-    }
-    break;
+        // wait for interrupt
+        delay(10);
+    } break;
 
     case finalState: {
-
+        // done.
+        // TODO: notify user
+        delay(1000);
+    } break;
     }
-    break;
-  }
+
+    // keep constant loop duration
+    delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
 }
 
-
-
-
-
-void motorL(float d) {
-  d = constrain(d, -1, 1);
-  int speed = 255 - d * maxPWMSpeed + motorTuningLeftToRight;
-  if (d > 0) {
-    // forward
-    digitalWrite(motorLPins[0], LOW);
-    analogWrite(motorLPins[1], speed);
-  } else if (d < 0) {
-    // backward
-    analogWrite(motorLPins[0], speed);
-    digitalWrite(motorLPins[1], LOW);
-  } else {
-    // stop
-    digitalWrite(motorLPins[0], LOW);
-    digitalWrite(motorLPins[1], LOW);
-  }
-}
-
-void motorR(float d) {
-  d = constrain(d, -1, 1);
-  int speed = 255 - d * maxPWMSpeed - motorTuningLeftToRight;
-  Serial.println(speed);
-  if (d > 0) {
-    // forward
-    digitalWrite(motorRPins[0], LOW);
-    analogWrite(motorRPins[1], speed);
-  } else if (d < 0) {
-    // backward
-    analogWrite(motorRPins[0], speed);
-    digitalWrite(motorRPins[1], LOW);
-  } else {
-    // stop
-    digitalWrite(motorRPins[0], LOW);
-    digitalWrite(motorRPins[1], LOW);
-  }
-}
-
-int16_t angleZ() {
-  return mpu.GetAngZ()+179;
-}
+int16_t angleZ() { return mpu6050.getAngleZ(); }
