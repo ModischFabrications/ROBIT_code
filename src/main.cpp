@@ -205,7 +205,16 @@ void loop() {
     } break;
 
     case pickupState: {
-        // TODO: try to pick it up multiple times, reposition if unsuccessful
+        /* TODO implement async
+        assert hall_sensor == 0
+        servo down
+        if hall_sensor == 1: 
+            servo up
+            returnState
+        else: 
+            reposition and try again
+        */
+
     } break;
 
     case returnState: {
