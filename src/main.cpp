@@ -45,6 +45,8 @@ volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
+const uint8_t p_regulation_factor = 10;
+
 void startSearch() {
     initial_angle = angleZ();
     smallestDistanceFound = ultrasonic.MAX_DISTANCE;
@@ -108,6 +110,15 @@ void driveTest() {
   }
 }
 
+void correct_direction(int16_t curr_angle, int16_t target_angle) {
+    // changing speed of side that drifts off or lags behind might collide with min_speed
+    // -> both need to be changed
+    float correction_factor = 1 + (curr_angle - target_angle)/p_regulation_factor;
+    correction_factor = constrain(correction_factor, 0.2f, 1.8f);
+    motor.setLeftSpeed(motor.getLeftSpeed() * (correction_factor/2));
+    motor.setRightSpeed(motor.getRightSpeed() * (-correction_factor/2));
+}
+
 void setup() {
     if (USE_SERIAL) { Serial.begin(115200); }
 
@@ -166,6 +177,11 @@ void loop() {
     } break;
 
     case approachState: {
+        int16_t curr_angle = angleZ();
+        if (curr_angle != angleOfSmallestDistance) {
+            correct_direction(curr_angle, angleOfSmallestDistance);
+        }
+
         uint16_t distance = ultrasonic.get_min_distance();
 
         if (distance == ultrasonic.MAX_DISTANCE) {
