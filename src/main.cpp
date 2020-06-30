@@ -4,6 +4,7 @@
 
 #include "Motors.h"
 #include "Ultrasonic.h"
+#include "Lights.h"
 
 #ifdef DEBUG
 const bool USE_SERIAL = true;
@@ -15,6 +16,7 @@ MPU6050 mpu6050(Wire);
 
 Ultrasonic ultrasonic;
 Motors motor;
+Lights lights;
 
 const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
 
@@ -230,7 +232,7 @@ void loop() {
     }
 
     // keep constant loop duration
-    delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
+    lights.delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
 }
 
 int16_t angleZ() { return mpu6050.getAngleZ(); }
