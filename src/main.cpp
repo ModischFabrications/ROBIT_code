@@ -15,14 +15,14 @@
 #include "ManagedMotors.h"
 #include "Lights.h"
 #include "MagnetSensor.h"
+#include "LineSensor.h"
 
 Ultrasonic ultrasonic;
 Gyro gyro;
 ManagedMotors motors = ManagedMotors(gyro);
 Lights lights;
 MagnetSensor magnet;
-
-const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
+LineSensor line;
 
 enum FSMstates {
     initState,
@@ -86,7 +86,7 @@ void startPickup() {
 }
 
 void line_found() {
-    Serial.println("line_found");
+    DEBUG_PRINTLN("line_found");
     if (state == returnState) {
         state = finalState;
         // done!
@@ -117,8 +117,9 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-
-    attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
+    line.begin();
+    
+    line.registerListener(line_found);
     //driveTest();
 
     lights.helloPower();
