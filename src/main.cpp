@@ -1,6 +1,4 @@
 #include <Arduino.h>
-//#include <TinyMPU6050.h>
-#include <MPU6050_tockn.h>
 
 #define DEBUG
 
@@ -14,20 +12,15 @@
 
 #include "Motors.h"
 #include "Ultrasonic.h"
-
-#include "Motors.h"
-#include "Ultrasonic.h"
 #include "Lights.h"
-
-MPU6050 mpu6050(Wire);
+#include "Gyro.h"
 
 Ultrasonic ultrasonic;
 Motors motor;
 Lights lights;
+Gyro gyro;
 
 const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
-
-int16_t angleZ(); // positive values in clockwise direction
 
 enum FSMstates {
     initState,
@@ -57,7 +50,7 @@ const uint8_t pickupDistance = 5;
 const uint8_t p_regulation_factor = 50;
 
 void startSearch() {
-    initial_angle = angleZ();
+    initial_angle = gyro.getAngleZ();
     smallestDistanceFound = ultrasonic.MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
     motor.setLeftSpeed(0.5);
@@ -138,12 +131,7 @@ void setup() {
     Serial.begin(115200);
     #endif
 
-    mpu6050.begin();
-
-    delay(100);
-    //mpu6050.calcGyroOffsets(true);
-    mpu6050.setGyroOffsets(-2.70, 0.94, -0.40);
-    delay(100);
+    gyro.begin();
 
     attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
     //driveTest();
@@ -164,13 +152,13 @@ void loop() {
 
     case searchState: {
         uint16_t current_distance = ultrasonic.get_distance();
-        int16_t current_angle = angleZ();
+        int16_t current_angle = gyro.getAngleZ();
         if (current_distance < smallestDistanceFound) {
             // found something closer
             smallestDistanceFound = current_distance;
             angleOfSmallestDistance = current_angle;
         }
-        if (angleZ() - initial_angle >= 360) {
+        if (gyro.getAngleZ() - initial_angle >= 360) {
             // full rotation
             if (smallestDistanceFound == ultrasonic.MAX_DISTANCE) {
                 // nothing found
@@ -186,14 +174,14 @@ void loop() {
     case alignToTargetState: {
         // turn to face shortest distance
         // TODO: approximated comparison, won't hit exact angle
-        if (angleZ() == angleOfSmallestDistance) {
+        if (gyro.getAngleZ() == angleOfSmallestDistance) {
             startApproach();
         }
 
     } break;
 
     case approachState: {
-        int16_t curr_angle = angleZ();
+        int16_t curr_angle = gyro.getAngleZ();
         if (curr_angle != angleOfSmallestDistance) {
             correct_direction(curr_angle, angleOfSmallestDistance);
         }
@@ -248,5 +236,3 @@ void loop() {
     // keep constant loop duration
     lights.delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
 }
-
-int16_t angleZ() { return mpu6050.getAngleZ(); }
