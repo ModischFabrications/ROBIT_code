@@ -25,7 +25,7 @@ Ultrasonic ultrasonic;
 Motors motor;
 Lights lights;
 
-const uint8_t PIN_LINESENSOR = 10;   // only 2 & 3 work
+const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
 
 int16_t angleZ(); // positive values in clockwise direction
 
