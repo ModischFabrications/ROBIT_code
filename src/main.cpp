@@ -14,11 +14,13 @@
 #include "Ultrasonic.h"
 #include "Lights.h"
 #include "Gyro.h"
+#include "MagnetSensor.h"
 
 Ultrasonic ultrasonic;
 Motors motor;
 Lights lights;
 Gyro gyro;
+MagnetSensor magnet;
 
 const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
 
@@ -135,6 +137,7 @@ void setup() {
     motor.begin();
     lights.begin();
     gyro.begin();
+    magnet.begin();
 
     attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
     //driveTest();
@@ -213,9 +216,9 @@ void loop() {
 
     case pickupState: {
         /* TODO implement async
-        assert hall_sensor == 0
+        assert !magnet.detected()
         servo down
-        if hall_sensor == 1:
+        if magnet.detected():
             servo up
             returnState
         else:

@@ -8,8 +8,8 @@ class Lights {
   private:
     // statics needed to allow FastLED template parameters
     // TODO: use correct pin
-    static const uint8_t PIN_LEDS = 8;
-    static const uint8_t N_LEDS = 10;
+    static const uint8_t PIN_LEDS = 80;
+    static const uint8_t N_LEDS = 100;
 
     const uint16_t MAX_BRIGHTNESS = 200;
     const uint16_t MAX_MILLIAMPS = 300;
