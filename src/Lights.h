@@ -11,6 +11,7 @@ class Lights {
     static const uint8_t PIN_LEDS = 8;
     static const uint8_t N_LEDS = 10;
 
+    const uint16_t MAX_BRIGHTNESS = 200;
     const uint16_t MAX_MILLIAMPS = 300;
 
     const uint16_t T_ANIMATION_MS = (1 * 1000);
@@ -22,7 +23,10 @@ class Lights {
         pinMode(PIN_LEDS, OUTPUT);
 
         FastLED.addLeds<WS2812B, PIN_LEDS, GRB>(leds, N_LEDS);
-        // set powerlimit to 5v, 1000mA (Fuse size)
+
+        // prevent blindness
+        FastLED.setBrightness(MAX_BRIGHTNESS);
+        // prevent brownouts
         FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_MILLIAMPS);
 
         FastLED.showColor(CRGB::Black);
@@ -30,14 +34,16 @@ class Lights {
         FastLED.show();
     }
 
-    // flash leds one by one
+    /**
+     * Test LEDs, timing and power supply
+     * */
     void helloPower() {
-        // TODO: use fading, might want to reuse clock functions
-        // might even want to use a rainbow fade? -> check FastLED buildin animations
+        // TODO: use fading? might even want to use a rainbow fade? 
+        // -> check FastLED buildin animations
         for (uint8_t i = 0; i < N_LEDS; i++) {
             leds[i] = CRGB::White;
             FastLED.show();
-            delay(T_ANIMATION_MS / N_LEDS);
+            FastLED.delay(T_ANIMATION_MS / N_LEDS);
             leds[i] = CRGB::Black;
         }
     }
