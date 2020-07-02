@@ -2,21 +2,24 @@
 //#include <TinyMPU6050.h>
 #include <MPU6050_tockn.h>
 
+#define DEBUG
+#ifdef DEBUG
+#define DEBUG_PRINT(x) Serial.print(x)
+#define DEBUG_PRINTLN(x) Serial.println(x)
+#else
+#define DEBUG_PRINT(x)
+#define DEBUG_PRINTLN(x)
+#endif
+
 #include "Motors.h"
 #include "Ultrasonic.h"
-
-#ifdef DEBUG
-const bool USE_SERIAL = true;
-#else
-const bool USE_SERIAL = false;
-#endif
 
 MPU6050 mpu6050(Wire);
 
 Ultrasonic ultrasonic;
 Motors motor;
 
-const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
+const uint8_t PIN_LINESENSOR = 10;   // only 2 & 3 work
 
 int16_t angleZ(); // positive values in clockwise direction
 
@@ -45,7 +48,7 @@ volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
-const uint8_t p_regulation_factor = 10;
+const uint8_t p_regulation_factor = 50;
 
 void startSearch() {
     initial_angle = angleZ();
@@ -113,14 +116,21 @@ void driveTest() {
 void correct_direction(int16_t curr_angle, int16_t target_angle) {
     // changing speed of side that drifts off or lags behind might collide with min_speed
     // -> both need to be changed
-    float correction_factor = 1 + (curr_angle - target_angle)/p_regulation_factor;
-    correction_factor = constrain(correction_factor, 0.2f, 1.8f);
-    motor.setLeftSpeed(motor.getLeftSpeed() * (correction_factor/2));
-    motor.setRightSpeed(motor.getRightSpeed() * (-correction_factor/2));
+    float correction_factor = (curr_angle - target_angle)/float(p_regulation_factor);
+
+    correction_factor = constrain(correction_factor, -0.5f, 0.5f);
+
+    motor.setLeftSpeed(-0.5);
+    motor.setRightSpeed(-0.5);
+
+    motor.setLeftSpeed(motor.getLeftSpeed()  - correction_factor);
+    motor.setRightSpeed(motor.getRightSpeed() + correction_factor);
 }
 
 void setup() {
-    if (USE_SERIAL) { Serial.begin(115200); }
+    #ifdef DEBUG
+    Serial.begin(115200);
+    #endif
 
     mpu6050.begin();
 
@@ -136,10 +146,8 @@ void setup() {
 void loop() {
     mpu6050.update();
 
-    if (USE_SERIAL) {
-      Serial.print("state: ");
-      Serial.println(state);
-    }
+    DEBUG_PRINT("state: ");
+    DEBUG_PRINTLN(state);
 
     switch (state) {
     case initState: {
@@ -208,10 +216,10 @@ void loop() {
         /* TODO implement async
         assert hall_sensor == 0
         servo down
-        if hall_sensor == 1: 
+        if hall_sensor == 1:
             servo up
             returnState
-        else: 
+        else:
             reposition and try again
         */
 

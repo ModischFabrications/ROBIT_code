@@ -7,11 +7,11 @@ class Motors {
     const uint8_t PINS_LEFT[2] = {5, 6};
     const uint8_t PINS_RIGHT[2] = {9, 10};
 
-    const uint8_t MIN_SPEED = 70; // 0 to 255
+    const uint8_t MIN_SPEED = 80; // 0 to 255
     const uint8_t MAX_SPEED = 110; // 0 to 255
 
-    // TODO: pass in from user?
-    int8_t motorRightTuning = -18;
+    // hardware specific
+    int8_t motorRightTuning = -10;
 
     float leftSpeed = 0;
     float rightSpeed = 0;
@@ -27,6 +27,11 @@ class Motors {
 
         analogWrite(active_pin, speed);
         digitalWrite(disabled_pin, LOW);
+
+        DEBUG_PRINT("motor: ");
+        DEBUG_PRINT(forwards);
+        DEBUG_PRINT(" ");
+        DEBUG_PRINTLN(speed);
     }
 
   public:
