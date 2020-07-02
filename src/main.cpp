@@ -2,7 +2,14 @@
 //#include <TinyMPU6050.h>
 #include <MPU6050_tockn.h>
 
+<<<<<<< HEAD
 #define DEBUG
+=======
+#include "Motors.h"
+#include "Ultrasonic.h"
+#include "Lights.h"
+
+>>>>>>> d6484bd84c6b4a76f15560bd02eedcdd3b09c463
 #ifdef DEBUG
 #define DEBUG_PRINT(x) Serial.print(x)
 #define DEBUG_PRINTLN(x) Serial.println(x)
@@ -18,6 +25,7 @@ MPU6050 mpu6050(Wire);
 
 Ultrasonic ultrasonic;
 Motors motor;
+Lights lights;
 
 const uint8_t PIN_LINESENSOR = 10;   // only 2 & 3 work
 
@@ -141,6 +149,8 @@ void setup() {
 
     attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
     //driveTest();
+
+    lights.helloPower();
 }
 
 void loop() {
@@ -238,7 +248,7 @@ void loop() {
     }
 
     // keep constant loop duration
-    delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
+    lights.delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
 }
 
 int16_t angleZ() { return mpu6050.getAngleZ(); }
