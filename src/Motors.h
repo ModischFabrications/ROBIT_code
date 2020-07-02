@@ -13,6 +13,9 @@ class Motors {
     // TODO: pass in from user?
     int8_t motorRightTuning = -18;
 
+    float leftSpeed = 0;
+    float rightSpeed = 0;
+
     void setMotorSpeed(const uint8_t* pin_tuple, const bool forwards, const uint16_t speed) const{
         if (speed == 0) {
             digitalWrite(pin_tuple[0], LOW);
@@ -25,8 +28,6 @@ class Motors {
         analogWrite(active_pin, speed);
         digitalWrite(disabled_pin, LOW);
     }
-
-    // TODO: cache speeds?
 
   public:
     Motors() {
@@ -46,10 +47,17 @@ class Motors {
      */
     void setLeftSpeed(const float factor) {
         float d = constrain(factor, -1, 1);
+        if (this->leftSpeed == d) return;
+        this->leftSpeed = d;
+
         uint16_t speed = abs(d) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
         speed = d == 0 ? 0 : speed;
 
         setMotorSpeed(PINS_LEFT, d > 0, speed);
+    }
+
+    float getLeftSpeed() {
+        return this->leftSpeed;
     }
 
     /**
@@ -58,9 +66,16 @@ class Motors {
      */
     void setRightSpeed(const float factor) {
         float d = constrain(factor, -1, 1);
+        if (this->rightSpeed == d) return;
+        this->rightSpeed = d;
+
         uint16_t speed = abs(d) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED + motorRightTuning;
         speed = d == 0 ? 0 : speed;
 
         setMotorSpeed(PINS_RIGHT, d > 0, speed);
+    }
+
+    float getRightSpeed() {
+        return this->rightSpeed;
     }
 };
