@@ -5,7 +5,7 @@
 class MagnetSensor {
   private:
     // TODO: correct pin
-    const uint8_t PIN_HALL = 99;
+    const uint8_t PIN_HALL = A3;
 
   public:
     void begin() { pinMode(PIN_HALL, INPUT); }
