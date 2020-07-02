@@ -2,14 +2,8 @@
 //#include <TinyMPU6050.h>
 #include <MPU6050_tockn.h>
 
-<<<<<<< HEAD
 #define DEBUG
-=======
-#include "Motors.h"
-#include "Ultrasonic.h"
-#include "Lights.h"
 
->>>>>>> d6484bd84c6b4a76f15560bd02eedcdd3b09c463
 #ifdef DEBUG
 #define DEBUG_PRINT(x) Serial.print(x)
 #define DEBUG_PRINTLN(x) Serial.println(x)
@@ -20,6 +14,10 @@
 
 #include "Motors.h"
 #include "Ultrasonic.h"
+
+#include "Motors.h"
+#include "Ultrasonic.h"
+#include "Lights.h"
 
 MPU6050 mpu6050(Wire);
 
