@@ -7,7 +7,7 @@ class Motors {
     const uint8_t PINS_LEFT[2] = {5, 6};
     const uint8_t PINS_RIGHT[2] = {9, 10};
 
-    const uint8_t MIN_SPEED = 80; // 0 to 255
+    const uint8_t MIN_SPEED = 80;  // 0 to 255, needs to be lower than MAX_SPEED
     const uint8_t MAX_SPEED = 110; // 0 to 255
 
     // hardware specific
@@ -16,7 +16,7 @@ class Motors {
     float leftSpeed = 0;
     float rightSpeed = 0;
 
-    void setMotorSpeed(const uint8_t* pin_tuple, const bool forwards, const uint16_t speed) const{
+    void setMotorSpeed(const uint8_t* pin_tuple, const bool forwards, const uint16_t speed) const {
         if (speed == 0) {
             digitalWrite(pin_tuple[0], LOW);
             digitalWrite(pin_tuple[1], LOW);
@@ -35,7 +35,7 @@ class Motors {
     }
 
   public:
-    void begin() {
+    void begin(const int8_t motorRightTuning) {
         pinMode(PINS_LEFT[0], OUTPUT);
         digitalWrite(PINS_LEFT[0], LOW);
         pinMode(PINS_LEFT[1], OUTPUT);
@@ -44,6 +44,8 @@ class Motors {
         digitalWrite(PINS_RIGHT[0], LOW);
         pinMode(PINS_RIGHT[1], OUTPUT);
         digitalWrite(PINS_RIGHT[1], LOW);
+
+        this->motorRightTuning = motorRightTuning;
     }
 
     /**
@@ -52,7 +54,8 @@ class Motors {
      */
     void setLeftSpeed(const float factor) {
         float d = constrain(factor, -1, 1);
-        if (this->leftSpeed == d) return;
+        if (this->leftSpeed == d)
+            return;
         this->leftSpeed = d;
 
         uint16_t speed = abs(d) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
@@ -61,9 +64,7 @@ class Motors {
         setMotorSpeed(PINS_LEFT, d > 0, speed);
     }
 
-    float getLeftSpeed() {
-        return this->leftSpeed;
-    }
+    float getLeftSpeed() const { return this->leftSpeed; }
 
     /**
      * set speed of right motor in percentage.
@@ -71,7 +72,8 @@ class Motors {
      */
     void setRightSpeed(const float factor) {
         float d = constrain(factor, -1, 1);
-        if (this->rightSpeed == d) return;
+        if (this->rightSpeed == d)
+            return;
         this->rightSpeed = d;
 
         uint16_t speed = abs(d) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED + motorRightTuning;
@@ -80,7 +82,5 @@ class Motors {
         setMotorSpeed(PINS_RIGHT, d > 0, speed);
     }
 
-    float getRightSpeed() {
-        return this->rightSpeed;
-    }
+    float getRightSpeed() const { return this->rightSpeed; }
 };
