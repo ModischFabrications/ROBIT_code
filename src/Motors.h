@@ -35,7 +35,7 @@ class Motors {
     }
 
   public:
-    Motors() {
+    void begin() {
         pinMode(PINS_LEFT[0], OUTPUT);
         digitalWrite(PINS_LEFT[0], LOW);
         pinMode(PINS_LEFT[1], OUTPUT);

@@ -19,7 +19,7 @@ class Lights {
     CRGB leds[N_LEDS];
 
   public:
-    Lights() {
+    void begin() {
         pinMode(PIN_LEDS, OUTPUT);
 
         FastLED.addLeds<WS2812B, PIN_LEDS, GRB>(leds, N_LEDS);
