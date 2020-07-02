@@ -10,16 +10,16 @@
 #define DEBUG_PRINTLN(x)
 #endif
 
-#include "Motors.h"
 #include "Ultrasonic.h"
-#include "Lights.h"
 #include "Gyro.h"
+#include "ManagedMotors.h"
+#include "Lights.h"
 #include "MagnetSensor.h"
 
 Ultrasonic ultrasonic;
-Motors motor;
-Lights lights;
 Gyro gyro;
+ManagedMotors motors = ManagedMotors(gyro);
+Lights lights;
 MagnetSensor magnet;
 
 const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
@@ -49,21 +49,18 @@ volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
-const uint8_t p_regulation_factor = 50;
-
 void startSearch() {
     initial_angle = gyro.getAngleZ();
     smallestDistanceFound = ultrasonic.MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
-    motor.setLeftSpeed(0.5);
-    motor.setRightSpeed(-0.5);
+
+    motors.turn(0.5);
 
     state = searchState;
 }
 
 void startReverse() {
-    motor.setLeftSpeed(-0.5);
-    motor.setRightSpeed(-0.5);
+    motors.move(-0.5);
     reverseUntilTime = millis() + reverseForMS;
 
     state = reverseState;
@@ -71,22 +68,19 @@ void startReverse() {
 
 void startAlign() {
     // TODO: find shortest turn direction
-    motor.setLeftSpeed(-0.1);
-    motor.setRightSpeed(0.1);
+    motors.turn(0.1);
 
     state = alignToTargetState;
 }
 
 void startApproach() {
-    motor.setLeftSpeed(0.1);
-    motor.setRightSpeed(0.1);
+    motors.move(0.1);
 
     state = approachState;
 }
 
 void startPickup() {
-    motor.setLeftSpeed(0);
-    motor.setRightSpeed(0);
+    motors.stop();
 
     state = pickupState;
 }
@@ -107,25 +101,10 @@ void driveTest() {
   while(1) {
     float i = -1;
     for (; i < 1; i += 0.1) {
-      motor.setRightSpeed(i);
-      motor.setLeftSpeed(i);
+      motors.move(i);
       delay(500);
     }
   }
-}
-
-void correct_direction(int16_t curr_angle, int16_t target_angle) {
-    // changing speed of side that drifts off or lags behind might collide with min_speed
-    // -> both need to be changed
-    float correction_factor = (curr_angle - target_angle)/float(p_regulation_factor);
-
-    correction_factor = constrain(correction_factor, -0.5f, 0.5f);
-
-    motor.setLeftSpeed(-0.5);
-    motor.setRightSpeed(-0.5);
-
-    motor.setLeftSpeed(motor.getLeftSpeed()  - correction_factor);
-    motor.setRightSpeed(motor.getRightSpeed() + correction_factor);
 }
 
 void setup() {
@@ -134,7 +113,7 @@ void setup() {
     #endif
 
     ultrasonic.begin();
-    motor.begin();
+    motors.begin();
     lights.begin();
     gyro.begin();
     magnet.begin();
@@ -187,11 +166,6 @@ void loop() {
     } break;
 
     case approachState: {
-        int16_t curr_angle = gyro.getAngleZ();
-        if (curr_angle != angleOfSmallestDistance) {
-            correct_direction(curr_angle, angleOfSmallestDistance);
-        }
-
         uint16_t distance = ultrasonic.get_min_distance();
 
         if (distance == ultrasonic.MAX_DISTANCE) {
@@ -238,6 +212,9 @@ void loop() {
         delay(1000);
     } break;
     }
+
+    // keep movement straight
+    motors.update();
 
     // keep constant loop duration
     lights.delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
