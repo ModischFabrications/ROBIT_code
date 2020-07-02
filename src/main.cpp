@@ -131,6 +131,9 @@ void setup() {
     Serial.begin(115200);
     #endif
 
+    ultrasonic.begin();
+    motor.begin();
+    lights.begin();
     gyro.begin();
 
     attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);

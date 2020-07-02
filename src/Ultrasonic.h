@@ -14,7 +14,7 @@ class Ultrasonic {
     const uint16_t MAX_TIME = (2L * MAX_DISTANCE) * SOUND_SPEED + 10;
     // static const uint16_t MAX_TIME = 25000;
 
-    Ultrasonic() {
+    void begin() {
         pinMode(PIN_TRG, OUTPUT);
         digitalWrite(PIN_TRG, LOW);
 
