@@ -194,6 +194,7 @@ void loop() {
         servo down
         if magnet.detected():
             servo up
+            assert magnet.detected()
             returnState
         else:
             reposition and try again

@@ -49,7 +49,7 @@ class ManagedMotors {
         }
 
     /**
-     * positive turns right
+     * positive turns right. This won't always turn with equal speed!
      * */
     void turn(float speed) {
         speed = constrain(speed, -1, 1);
@@ -58,7 +58,8 @@ class ManagedMotors {
     }
 
     /**
-     * positive is forwards, reverse is possible
+     * positive is forwards, reverse is possible. 
+     * This is a controlled movement, deviations will be corrected internally. 
      * */
     void move(float speed) {
         if (speed == 0) {
