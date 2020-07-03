@@ -41,7 +41,7 @@ class Ultrasonic {
         return duration;
     }
 
-    // TODO: --------- extract to user code?
+    // --------- lvl 2
 
     uint8_t get_distance() const {
         uint16_t time_us = poll_time_us();
