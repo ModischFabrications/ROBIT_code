@@ -1,6 +1,4 @@
 #include <Arduino.h>
-//#include <TinyMPU6050.h>
-#include <MPU6050_tockn.h>
 
 #define DEBUG
 
@@ -12,24 +10,22 @@
 #define DEBUG_PRINTLN(x)
 #endif
 
-#include "Motors.h"
-#include "Ultrasonic.h"
-
-#include "Motors.h"
-#include "Ultrasonic.h"
+#include "Gyro.h"
 #include "Lights.h"
-
-MPU6050 mpu6050(Wire);
+#include "LineSensor.h"
+#include "MagnetSensor.h"
+#include "ManagedMotors.h"
+#include "Ultrasonic.h"
 
 Ultrasonic ultrasonic;
-Motors motor;
+Gyro gyro;
+ManagedMotors motors = ManagedMotors(gyro);
 Lights lights;
+MagnetSensor magnet;
+LineSensor line;
 
-const uint8_t PIN_LINESENSOR = 2;   // only 2 & 3 work
-
-int16_t angleZ(); // positive values in clockwise direction
-
-enum FSMstates {
+// keep smaller than N_LEDs for printout!
+enum FSMstates : uint8_t {
     initState,
     searchState,
     alignToTargetState,
@@ -43,7 +39,6 @@ enum FSMstates {
 volatile FSMstates state = initState;
 
 const uint16_t targetLoopDuration = 20;
-uint32_t lastLoopTime = 0;
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
@@ -54,21 +49,18 @@ volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
-const uint8_t p_regulation_factor = 50;
-
 void startSearch() {
-    initial_angle = angleZ();
+    initial_angle = gyro.getAngleZ();
     smallestDistanceFound = ultrasonic.MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
-    motor.setLeftSpeed(0.5);
-    motor.setRightSpeed(-0.5);
+
+    motors.turn(0.5);
 
     state = searchState;
 }
 
 void startReverse() {
-    motor.setLeftSpeed(-0.5);
-    motor.setRightSpeed(-0.5);
+    motors.move(-0.5);
     reverseUntilTime = millis() + reverseForMS;
 
     state = reverseState;
@@ -76,28 +68,25 @@ void startReverse() {
 
 void startAlign() {
     // TODO: find shortest turn direction
-    motor.setLeftSpeed(-0.1);
-    motor.setRightSpeed(0.1);
+    motors.turn(-0.1);
 
     state = alignToTargetState;
 }
 
 void startApproach() {
-    motor.setLeftSpeed(0.1);
-    motor.setRightSpeed(0.1);
+    motors.move(0.1);
 
     state = approachState;
 }
 
 void startPickup() {
-    motor.setLeftSpeed(0);
-    motor.setRightSpeed(0);
+    motors.stop();
 
     state = pickupState;
 }
 
 void line_found() {
-    Serial.println("line_found");
+    DEBUG_PRINTLN("line_found");
     if (state == returnState) {
         state = finalState;
         // done!
@@ -109,53 +98,46 @@ void line_found() {
 }
 
 void driveTest() {
-  while(1) {
-    float i = -1;
-    for (; i < 1; i += 0.1) {
-      motor.setRightSpeed(i);
-      motor.setLeftSpeed(i);
-      delay(500);
+    while (1) {
+        float i = -1;
+        for (; i < 1; i += 0.1) {
+            motors.move(i);
+            delay(500);
+        }
     }
-  }
 }
 
-void correct_direction(int16_t curr_angle, int16_t target_angle) {
-    // changing speed of side that drifts off or lags behind might collide with min_speed
-    // -> both need to be changed
-    float correction_factor = (curr_angle - target_angle)/float(p_regulation_factor);
+void showState(FSMstates state) {
+    DEBUG_PRINT("state: ");
+    DEBUG_PRINTLN(state);
 
-    correction_factor = constrain(correction_factor, -0.5f, 0.5f);
-
-    motor.setLeftSpeed(-0.5);
-    motor.setRightSpeed(-0.5);
-
-    motor.setLeftSpeed(motor.getLeftSpeed()  - correction_factor);
-    motor.setRightSpeed(motor.getRightSpeed() + correction_factor);
+    fill_solid(lights.leds, lights.N_LEDS, CRGB::Black);
+    lights.leds[(uint8_t)state] = CRGB::Blue;
+    FastLED.show();
 }
 
 void setup() {
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.begin(115200);
-    #endif
+#endif
 
-    mpu6050.begin();
+    ultrasonic.begin();
+    motors.begin();
+    lights.begin();
+    gyro.begin();
+    magnet.begin();
+    line.begin();
 
-    delay(100);
-    //mpu6050.calcGyroOffsets(true);
-    mpu6050.setGyroOffsets(-2.70, 0.94, -0.40);
-    delay(100);
-
-    attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), line_found, RISING);
-    //driveTest();
+    line.registerListener(line_found);
+    // driveTest();
 
     lights.helloPower();
 }
 
 void loop() {
-    mpu6050.update();
+    gyro.update();
 
-    DEBUG_PRINT("state: ");
-    DEBUG_PRINTLN(state);
+    showState(state);
 
     switch (state) {
     case initState: {
@@ -164,13 +146,13 @@ void loop() {
 
     case searchState: {
         uint16_t current_distance = ultrasonic.get_distance();
-        int16_t current_angle = angleZ();
+        int16_t current_angle = gyro.getAngleZ();
         if (current_distance < smallestDistanceFound) {
             // found something closer
             smallestDistanceFound = current_distance;
             angleOfSmallestDistance = current_angle;
         }
-        if (angleZ() - initial_angle >= 360) {
+        if (gyro.getAngleZ() - initial_angle >= 360) {
             // full rotation
             if (smallestDistanceFound == ultrasonic.MAX_DISTANCE) {
                 // nothing found
@@ -180,24 +162,18 @@ void loop() {
             startAlign();
         }
 
-
     } break;
 
     case alignToTargetState: {
         // turn to face shortest distance
         // TODO: approximated comparison, won't hit exact angle
-        if (angleZ() == angleOfSmallestDistance) {
+        if (gyro.getAngleZ() == angleOfSmallestDistance) {
             startApproach();
         }
 
     } break;
 
     case approachState: {
-        int16_t curr_angle = angleZ();
-        if (curr_angle != angleOfSmallestDistance) {
-            correct_direction(curr_angle, angleOfSmallestDistance);
-        }
-
         uint16_t distance = ultrasonic.get_min_distance();
 
         if (distance == ultrasonic.MAX_DISTANCE) {
@@ -222,10 +198,11 @@ void loop() {
 
     case pickupState: {
         /* TODO implement async
-        assert hall_sensor == 0
+        assert !magnet.detected()
         servo down
-        if hall_sensor == 1:
+        if magnet.detected():
             servo up
+            assert magnet.detected()
             returnState
         else:
             reposition and try again
@@ -245,8 +222,9 @@ void loop() {
     } break;
     }
 
-    // keep constant loop duration
-    lights.delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
-}
+    // keep movement straight
+    motors.update();
 
-int16_t angleZ() { return mpu6050.getAngleZ(); }
+    // keep constant loop duration by aligning to target duration
+    lights.delay(targetLoopDuration - (millis() % targetLoopDuration));
+}
