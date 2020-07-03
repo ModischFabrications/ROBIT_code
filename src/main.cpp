@@ -15,8 +15,8 @@
 #include "LineSensor.h"
 #include "MagnetSensor.h"
 #include "ManagedMotors.h"
-#include "Ultrasonic.h"
 #include "Sonar.h"
+#include "Ultrasonic.h"
 
 Sonar sonar;
 Gyro gyro;
@@ -40,6 +40,7 @@ enum FSMstates : uint8_t {
 volatile FSMstates state = initState;
 
 const uint16_t targetLoopDuration = 20;
+const uint8_t nLoopsToToggleHeartbeat = 1000 / targetLoopDuration; // once per second
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
@@ -112,7 +113,7 @@ void showState(FSMstates state) {
     DEBUG_PRINT("state: ");
     DEBUG_PRINTLN(state);
 
-    fill_solid(lights.leds, lights.N_LEDS, CRGB::Black);
+    fill_solid(lights.leds, lights.N_LEDS - 1, CRGB::Black);
     lights.leds[(uint8_t)state] = CRGB::Blue;
     FastLED.show();
 }
@@ -218,13 +219,21 @@ void loop() {
 
     case finalState: {
         // done.
-        // TODO: notify user
+        FastLED.showColor(CRGB::White);
         delay(1000);
     } break;
     }
 
     // keep movement straight
     motors.update();
+
+    static uint8_t loop_count = 0;
+    if (loop_count >= nLoopsToToggleHeartbeat) {
+        loop_count = 0;
+    }
+    CRGB curr_color = blend(CRGB::Orange, CRGB::Black, loop_count / nLoopsToToggleHeartbeat);
+    lights.leds[lights.N_LEDS - 1] = curr_color;
+    FastLED.show();
 
     // keep constant loop duration by aligning to target duration
     lights.delay(targetLoopDuration - (millis() % targetLoopDuration));
