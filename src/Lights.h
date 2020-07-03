@@ -9,16 +9,16 @@ class Lights {
     // statics needed to allow FastLED template parameters
     // TODO: use correct pin
     static const uint8_t PIN_LEDS = 4;
-    static const uint8_t N_LEDS = 10;
-
+    
     const uint16_t MAX_BRIGHTNESS = 200;
     const uint16_t MAX_MILLIAMPS = 300;
 
     const uint16_t T_ANIMATION_MS = (1 * 1000);
 
+  public:
+    static const uint8_t N_LEDS = 10;
     CRGB leds[N_LEDS];
 
-  public:
     void begin() {
         pinMode(PIN_LEDS, OUTPUT);
 

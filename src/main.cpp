@@ -10,12 +10,12 @@
 #define DEBUG_PRINTLN(x)
 #endif
 
-#include "Ultrasonic.h"
 #include "Gyro.h"
-#include "ManagedMotors.h"
 #include "Lights.h"
-#include "MagnetSensor.h"
 #include "LineSensor.h"
+#include "MagnetSensor.h"
+#include "ManagedMotors.h"
+#include "Ultrasonic.h"
 
 Ultrasonic ultrasonic;
 Gyro gyro;
@@ -24,7 +24,8 @@ Lights lights;
 MagnetSensor magnet;
 LineSensor line;
 
-enum FSMstates {
+// keep smaller than N_LEDs for printout!
+enum FSMstates : uint8_t {
     initState,
     searchState,
     alignToTargetState,
@@ -97,19 +98,28 @@ void line_found() {
 }
 
 void driveTest() {
-  while(1) {
-    float i = -1;
-    for (; i < 1; i += 0.1) {
-      motors.move(i);
-      delay(500);
+    while (1) {
+        float i = -1;
+        for (; i < 1; i += 0.1) {
+            motors.move(i);
+            delay(500);
+        }
     }
-  }
+}
+
+void showState(FSMstates state) {
+    DEBUG_PRINT("state: ");
+    DEBUG_PRINTLN(state);
+
+    fill_solid(lights.leds, lights.N_LEDS, CRGB::Black);
+    lights.leds[(uint8_t)state] = CRGB::Blue;
+    FastLED.show();
 }
 
 void setup() {
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.begin(115200);
-    #endif
+#endif
 
     ultrasonic.begin();
     motors.begin();
@@ -117,9 +127,9 @@ void setup() {
     gyro.begin();
     magnet.begin();
     line.begin();
-    
+
     line.registerListener(line_found);
-    //driveTest();
+    // driveTest();
 
     lights.helloPower();
 }
@@ -127,8 +137,7 @@ void setup() {
 void loop() {
     gyro.update();
 
-    DEBUG_PRINT("state: ");
-    DEBUG_PRINTLN(state);
+    showState(state);
 
     switch (state) {
     case initState: {
@@ -152,7 +161,6 @@ void loop() {
             }
             startAlign();
         }
-
 
     } break;
 
