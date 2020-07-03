@@ -126,7 +126,7 @@ void setup() {
 }
 
 void loop() {
-    mpu6050.update();
+    gyro.update();
 
     DEBUG_PRINT("state: ");
     DEBUG_PRINTLN(state);

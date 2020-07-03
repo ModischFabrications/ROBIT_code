@@ -21,6 +21,10 @@ class Gyro {
         delay(100);
     }
 
+    void update() {
+      mpu6050.update();
+    }
+
     /**
      *  positive values in clockwise direction
      * */
