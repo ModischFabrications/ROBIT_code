@@ -6,6 +6,7 @@
 #include "Motors.h"
 
 class ManagedMotors {
+    // level 2 convenience class for Motors
   private:
     // experimental results
     const int8_t MOTOR_RIGHT_TUNING = -10;
@@ -43,10 +44,7 @@ class ManagedMotors {
   public:
     ManagedMotors(const Gyro gyro) { this->gyro = gyro; }
 
-    void begin() { 
-        
-        motors.begin(MOTOR_RIGHT_TUNING); 
-        }
+    void begin() { motors.begin(MOTOR_RIGHT_TUNING); }
 
     /**
      * positive turns right. This won't always turn with equal speed!
@@ -58,8 +56,8 @@ class ManagedMotors {
     }
 
     /**
-     * positive is forwards, reverse is possible. 
-     * This is a controlled movement, deviations will be corrected internally. 
+     * positive is forwards, reverse is possible.
+     * This is a controlled movement, deviations will be corrected internally.
      * */
     void move(float speed) {
         if (speed == 0) {
