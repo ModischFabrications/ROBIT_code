@@ -166,7 +166,7 @@ void loop() {
 
     case alignToTargetState: {
         // turn to face shortest distance
-        // TODO: approximated comparison, won't hit exact angle
+        // approximated comparison not actually necessary right now
         if (gyro.getAngleZ() == angleOfSmallestDistance) {
             startApproach();
         }
