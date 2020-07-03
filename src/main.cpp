@@ -38,7 +38,6 @@ enum FSMstates {
 volatile FSMstates state = initState;
 
 const uint16_t targetLoopDuration = 20;
-uint32_t lastLoopTime = 0;
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
@@ -218,6 +217,6 @@ void loop() {
     // keep movement straight
     motors.update();
 
-    // keep constant loop duration
-    lights.delay(targetLoopDuration - (lastLoopTime % targetLoopDuration));
+    // keep constant loop duration by aligning to target duration
+    lights.delay(targetLoopDuration - (millis() % targetLoopDuration));
 }
