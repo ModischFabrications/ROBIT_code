@@ -16,8 +16,9 @@
 #include "MagnetSensor.h"
 #include "ManagedMotors.h"
 #include "Ultrasonic.h"
+#include "Sonar.h"
 
-Ultrasonic ultrasonic;
+Sonar sonar;
 Gyro gyro;
 ManagedMotors motors = ManagedMotors(gyro);
 Lights lights;
@@ -51,7 +52,7 @@ const uint8_t pickupDistance = 5;
 
 void startSearch() {
     initial_angle = gyro.getAngleZ();
-    smallestDistanceFound = ultrasonic.MAX_DISTANCE;
+    smallestDistanceFound = Sonar::MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
 
     motors.turn(0.5);
@@ -121,7 +122,7 @@ void setup() {
     Serial.begin(115200);
 #endif
 
-    ultrasonic.begin();
+    sonar.begin();
     motors.begin();
     lights.begin();
     gyro.begin();
@@ -145,7 +146,7 @@ void loop() {
     } break;
 
     case searchState: {
-        uint16_t current_distance = ultrasonic.get_distance();
+        uint16_t current_distance = sonar.get_distance();
         int16_t current_angle = gyro.getAngleZ();
         if (current_distance < smallestDistanceFound) {
             // found something closer
@@ -154,7 +155,7 @@ void loop() {
         }
         if (gyro.getAngleZ() - initial_angle >= 360) {
             // full rotation
-            if (smallestDistanceFound == ultrasonic.MAX_DISTANCE) {
+            if (smallestDistanceFound == Sonar::MAX_DISTANCE) {
                 // nothing found
                 // TODO: random move to new search position
                 return;
@@ -174,9 +175,9 @@ void loop() {
     } break;
 
     case approachState: {
-        uint16_t distance = ultrasonic.get_min_distance();
+        uint16_t distance = sonar.get_min_distance();
 
-        if (distance == ultrasonic.MAX_DISTANCE) {
+        if (distance == Sonar::MAX_DISTANCE) {
             // lost it again
             startSearch();
             return;
