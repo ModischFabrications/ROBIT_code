@@ -4,7 +4,6 @@
 
 class MagnetSensor {
   private:
-    // TODO: correct pin
     const uint8_t PIN_HALL = A3;
 
   public:
@@ -14,7 +13,6 @@ class MagnetSensor {
      * True if a magnet is close.
      * */
     bool detected() {
-        // TODO: invert signal if needed
         return digitalRead(PIN_HALL);
     }
 };

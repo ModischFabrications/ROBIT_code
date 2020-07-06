@@ -15,9 +15,10 @@
 #include "LineSensor.h"
 #include "MagnetSensor.h"
 #include "ManagedMotors.h"
+#include "Sonar.h"
 #include "Ultrasonic.h"
 
-Ultrasonic ultrasonic;
+Sonar sonar;
 Gyro gyro;
 ManagedMotors motors = ManagedMotors(gyro);
 Lights lights;
@@ -39,6 +40,7 @@ enum FSMstates : uint8_t {
 volatile FSMstates state = initState;
 
 const uint16_t targetLoopDuration = 20;
+const uint8_t HeartbeatsPerMinute = 60;
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
@@ -51,7 +53,7 @@ const uint8_t pickupDistance = 5;
 
 void startSearch() {
     initial_angle = gyro.getAngleZ();
-    smallestDistanceFound = ultrasonic.MAX_DISTANCE;
+    smallestDistanceFound = Sonar::MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
 
     motors.turn(0.5);
@@ -111,7 +113,7 @@ void showState(FSMstates state) {
     DEBUG_PRINT("state: ");
     DEBUG_PRINTLN(state);
 
-    fill_solid(lights.leds, lights.N_LEDS, CRGB::Black);
+    fill_solid(lights.leds, lights.N_LEDS - 1, CRGB::Black);
     lights.leds[(uint8_t)state] = CRGB::Blue;
     FastLED.show();
 }
@@ -121,7 +123,7 @@ void setup() {
     Serial.begin(115200);
 #endif
 
-    ultrasonic.begin();
+    sonar.begin();
     motors.begin();
     lights.begin();
     gyro.begin();
@@ -145,7 +147,7 @@ void loop() {
     } break;
 
     case searchState: {
-        uint16_t current_distance = ultrasonic.get_distance();
+        uint16_t current_distance = sonar.get_distance();
         int16_t current_angle = gyro.getAngleZ();
         if (current_distance < smallestDistanceFound) {
             // found something closer
@@ -154,7 +156,7 @@ void loop() {
         }
         if (gyro.getAngleZ() - initial_angle >= 360) {
             // full rotation
-            if (smallestDistanceFound == ultrasonic.MAX_DISTANCE) {
+            if (smallestDistanceFound == Sonar::MAX_DISTANCE) {
                 // nothing found
                 // TODO: random move to new search position
                 return;
@@ -166,7 +168,7 @@ void loop() {
 
     case alignToTargetState: {
         // turn to face shortest distance
-        // TODO: approximated comparison, won't hit exact angle
+        // approximated comparison not actually necessary right now
         if (gyro.getAngleZ() == angleOfSmallestDistance) {
             startApproach();
         }
@@ -174,9 +176,9 @@ void loop() {
     } break;
 
     case approachState: {
-        uint16_t distance = ultrasonic.get_min_distance();
+        uint16_t distance = sonar.get_min_distance();
 
-        if (distance == ultrasonic.MAX_DISTANCE) {
+        if (distance == Sonar::MAX_DISTANCE) {
             // lost it again
             startSearch();
             return;
@@ -217,13 +219,18 @@ void loop() {
 
     case finalState: {
         // done.
-        // TODO: notify user
+        FastLED.showColor(CRGB::White);
         delay(1000);
     } break;
     }
 
     // keep movement straight
     motors.update();
+
+    // fade between black and orange to look like a heartbeat
+    CRGB curr_color = blend(CRGB::Black, CRGB::Orange, beatsin8(HeartbeatsPerMinute, 0, 255));
+    lights.leds[lights.N_LEDS - 1] = curr_color;
+    FastLED.show();
 
     // keep constant loop duration by aligning to target duration
     lights.delay(targetLoopDuration - (millis() % targetLoopDuration));
