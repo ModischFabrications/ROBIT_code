@@ -40,7 +40,7 @@ enum FSMstates : uint8_t {
 volatile FSMstates state = initState;
 
 const uint16_t targetLoopDuration = 20;
-const uint8_t nLoopsPerHeartbeat = 1000 / targetLoopDuration; // once per second
+const uint8_t HeartbeatsPerMinute = 60;
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
@@ -227,12 +227,8 @@ void loop() {
     // keep movement straight
     motors.update();
 
-    static uint8_t loop_count = 0;
-    if (loop_count >= nLoopsPerHeartbeat) {
-        loop_count = 0;
-    }
-    // fade towards orange, jump to black. Could be nicer looking
-    CRGB curr_color = blend(CRGB::Black, CRGB::Orange, loop_count / nLoopsPerHeartbeat);
+    // fade between black and orange to look like a heartbeat
+    CRGB curr_color = blend(CRGB::Black, CRGB::Orange, beatsin8(HeartbeatsPerMinute, 0, 255));
     lights.leds[lights.N_LEDS - 1] = curr_color;
     FastLED.show();
 
