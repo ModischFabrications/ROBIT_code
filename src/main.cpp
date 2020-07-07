@@ -40,7 +40,7 @@ enum FSMstates : uint8_t {
 volatile FSMstates state = initState;
 
 const uint16_t targetLoopDuration = 20;
-const uint8_t nLoopsPerHeartbeat = 1000 / targetLoopDuration; // once per second
+const uint8_t HeartbeatsPerMinute = 60;
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
@@ -50,6 +50,8 @@ const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
+
+void(* resetFunc) (void) = 0;
 
 void startSearch() {
     initial_angle = gyro.getAngleZ();
@@ -134,6 +136,10 @@ void setup() {
     // driveTest();
 
     lights.helloPower();
+
+    // software reset
+    gyro.update();
+    if (gyro.getAngleZ() != 0) {resetFunc();}
 }
 
 void loop() {
@@ -154,7 +160,7 @@ void loop() {
             smallestDistanceFound = current_distance;
             angleOfSmallestDistance = current_angle;
         }
-        if (gyro.getAngleZ() - initial_angle >= 360) {
+        if (current_angle - initial_angle >= 360) {
             // full rotation
             if (smallestDistanceFound == Sonar::MAX_DISTANCE) {
                 // nothing found
@@ -169,7 +175,7 @@ void loop() {
     case alignToTargetState: {
         // turn to face shortest distance
         // approximated comparison not actually necessary right now
-        if (gyro.getAngleZ() == angleOfSmallestDistance) {
+        if (gyro.getAngleZ() <= angleOfSmallestDistance) {
             startApproach();
         }
 
@@ -227,12 +233,8 @@ void loop() {
     // keep movement straight
     motors.update();
 
-    static uint8_t loop_count = 0;
-    if (loop_count >= nLoopsPerHeartbeat) {
-        loop_count = 0;
-    }
-    // fade towards orange, jump to black. Could be nicer looking
-    CRGB curr_color = blend(CRGB::Black, CRGB::Orange, loop_count / nLoopsPerHeartbeat);
+    // fade between black and orange to look like a heartbeat
+    CRGB curr_color = blend(CRGB::Black, CRGB::Orange, beatsin8(HeartbeatsPerMinute, 0, 255));
     lights.leds[lights.N_LEDS - 1] = curr_color;
     FastLED.show();
 

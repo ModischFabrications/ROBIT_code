@@ -8,7 +8,7 @@ class Lights {
   private:
     // statics needed to allow FastLED template parameters
     static const uint8_t PIN_LEDS = 4;
-    
+
     const uint16_t MAX_BRIGHTNESS = 200;
     const uint16_t MAX_MILLIAMPS = 300;
 
@@ -37,10 +37,10 @@ class Lights {
      * Test LEDs, timing and power supply
      * */
     void helloPower() {
-        // TODO: use fading? might even want to use a rainbow fade? 
+        // TODO: use fading? might even want to use a rainbow fade?
         // -> check FastLED buildin animations
         for (uint8_t i = 0; i < N_LEDS; i++) {
-            leds[i] = CRGB::White;
+            leds[i] = CRGB::Red;
             FastLED.show();
             FastLED.delay(T_ANIMATION_MS / N_LEDS);
             leds[i] = CRGB::Black;
