@@ -27,7 +27,7 @@ class Sonar {
     uint8_t get_min_distance() const {
         uint8_t min_distance = MAX_DISTANCE;
 
-        for (uint8_t i = 0; i < 100; i++) {
+        for (uint8_t i = 0; i < 10; i++) {
             uint8_t this_dist = get_distance();
             if (this_dist < min_distance)
                 min_distance = this_dist;
