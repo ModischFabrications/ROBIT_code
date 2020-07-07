@@ -51,6 +51,8 @@ volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
+void(* restart) (void) = 0;
+
 void startSearch() {
     initial_angle = gyro.getAngleZ();
     smallestDistanceFound = Sonar::MAX_DISTANCE;
@@ -134,6 +136,11 @@ void setup() {
     // driveTest();
 
     lights.helloPower();
+
+    // software reset
+    gyro.update();
+    // movement detected without actually moving is a sign of wrong gyro startup
+    if (gyro.getAngleZ() != 0) restart();
 }
 
 void loop() {
@@ -154,7 +161,7 @@ void loop() {
             smallestDistanceFound = current_distance;
             angleOfSmallestDistance = current_angle;
         }
-        if (gyro.getAngleZ() - initial_angle >= 360) {
+        if (current_angle - initial_angle >= 360) {
             // full rotation
             if (smallestDistanceFound == Sonar::MAX_DISTANCE) {
                 // nothing found
@@ -169,7 +176,7 @@ void loop() {
     case alignToTargetState: {
         // turn to face shortest distance
         // approximated comparison not actually necessary right now
-        if (gyro.getAngleZ() == angleOfSmallestDistance) {
+        if (gyro.getAngleZ() <= angleOfSmallestDistance) {
             startApproach();
         }
 
