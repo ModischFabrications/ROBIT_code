@@ -14,10 +14,14 @@ class Gyro {
   public:
     void begin() {
         mpu6050.begin();
-
         delay(100);
+        // prevent strange init behaviour 
+        mpu6050.begin();
         // calculcated from mpu6050.calcGyroOffsets(true);
-        mpu6050.setGyroOffsets(-2.70, 0.94, -0.40);
+        // old MPU6050 with red LED
+        //mpu6050.setGyroOffsets(-2.70, 0.94, -0.40);
+        // new MPU6050 with green LED
+        mpu6050.setGyroOffsets(-1.40, 0.67, 0.63);
         delay(100);
     }
 
