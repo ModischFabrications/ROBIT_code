@@ -51,7 +51,7 @@ volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
-void(* resetFunc) (void) = 0;
+void(* restart) (void) = 0;
 
 void startSearch() {
     initial_angle = gyro.getAngleZ();
