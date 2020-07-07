@@ -139,7 +139,8 @@ void setup() {
 
     // software reset
     gyro.update();
-    if (gyro.getAngleZ() != 0) {resetFunc();}
+    // movement detected without actually moving is a sign of wrong gyro startup
+    if (gyro.getAngleZ() != 0) restart();
 }
 
 void loop() {
