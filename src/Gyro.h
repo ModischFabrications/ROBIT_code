@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-//#include <TinyMPU6050.h>
 #include <MPU6050_tockn.h>
 
 MPU6050 mpu6050(Wire);
@@ -15,7 +14,7 @@ class Gyro {
     void begin() {
         mpu6050.begin();
         delay(100);
-        // prevent strange init behaviour 
+        // prevent strange init behaviour
         mpu6050.begin();
         // calculcated from mpu6050.calcGyroOffsets(true);
         // old MPU6050 with red LED

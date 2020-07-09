@@ -15,12 +15,14 @@
 #include "LineSensor.h"
 #include "MagnetSensor.h"
 #include "ManagedMotors.h"
+#include "ManagedServo.h"
 #include "Sonar.h"
 #include "Ultrasonic.h"
 
 Sonar sonar;
 Gyro gyro;
 ManagedMotors motors = ManagedMotors(gyro);
+ManagedServo servo;
 Lights lights;
 MagnetSensor magnet;
 LineSensor line;
@@ -85,14 +87,25 @@ void startApproach() {
 
 void startPickup() {
     motors.stop();
-
+    servo.moveDown();
     state = pickupState;
+}
+
+void startReturn() {
+    motors.move(0.5);
+    state = returnState;
+}
+
+void startFinal() {
+    motors.stop();
+    state = finalState;
 }
 
 void line_found() {
     DEBUG_PRINTLN("line_found");
+    if (state == finalState) return;
     if (state == returnState) {
-        state = finalState;
+        startFinal();
         // done!
         return;
     }
@@ -124,9 +137,9 @@ void setup() {
 #ifdef DEBUG
     Serial.begin(115200);
 #endif
-
     sonar.begin();
     motors.begin();
+    servo.begin();
     lights.begin();
     gyro.begin();
     magnet.begin();
@@ -134,23 +147,29 @@ void setup() {
 
     line.registerListener(line_found);
     // driveTest();
+    // prevent motors from spinning on startup
+    motors.stop();
 
     lights.helloPower();
 
-    // software reset
     gyro.update();
     // movement detected without actually moving is a sign of wrong gyro startup
-    if (gyro.getAngleZ() != 0) restart();
+    if (gyro.getAngleZ() != 0) restart(); // software reset
+
+    // clear ultrasonic sensor
+    servo.moveUp();
 }
 
 void loop() {
     gyro.update();
+    servo.update();
 
     showState(state);
 
     switch (state) {
     case initState: {
-        startSearch();
+      // waiting until servo reached upper position, timeout set by library
+      if (servo.isStopped()) startSearch();
     } break;
 
     case searchState: {
@@ -206,28 +225,34 @@ void loop() {
     } break;
 
     case pickupState: {
-        /* TODO implement async
-        assert !magnet.detected()
-        servo down
-        if magnet.detected():
-            servo up
-            assert magnet.detected()
-            returnState
-        else:
-            reposition and try again
-        */
-
+      // wait for movement down from transition
+      if (servo.isStopped()) {
+        servo.moveUp();
+        if (servo.isStopped()) {
+          if (magnet.detected()) {
+            // found!
+            startReturn();
+          } else {
+            // TODO: maybe reverse first
+            startSearch();
+          }
+        }
+      }
     } break;
 
     case returnState: {
         // wait for interrupt
-        delay(10);
+        // delay() won't affect the ISR
+        //delay(10);
     } break;
 
     case finalState: {
         // done.
-        FastLED.showColor(CRGB::White);
-        delay(1000);
+        //FastLED.showColor(CRGB::White);
+        // rainbow!
+        fill_rainbow(lights.leds, lights.N_LEDS, beatsin16(20, 0, 359));
+
+        //delay(1000);
     } break;
     }
 

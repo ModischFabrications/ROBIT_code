@@ -5,7 +5,7 @@
 class Motors {
   private:
     const uint8_t PINS_LEFT[2] = {5, 6};
-    const uint8_t PINS_RIGHT[2] = {9, 10};
+    const uint8_t PINS_RIGHT[2] = {3, 11};
 
     const uint8_t MIN_SPEED = 80;  // 0 to 255, needs to be lower than MAX_SPEED
     const uint8_t MAX_SPEED = 110; // 0 to 255
