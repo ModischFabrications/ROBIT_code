@@ -21,7 +21,7 @@ class Lights {
     void begin() {
         pinMode(PIN_LEDS, OUTPUT);
 
-        FastLED.addLeds<WS2812B, PIN_LEDS, GRB>(leds, N_LEDS);
+        FastLED.addLeds<WS2812B, PIN_LEDS, GRB>(leds, N_LEDS).setCorrection(TypicalLEDStrip);
 
         // prevent blindness
         FastLED.setBrightness(MAX_BRIGHTNESS);
