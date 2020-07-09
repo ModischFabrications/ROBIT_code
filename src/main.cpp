@@ -162,6 +162,7 @@ void loop() {
 
     switch (state) {
     case initState: {
+      // waiting until servo reached upper position, timeout set by library
       if (servo.isStopped()) startSearch();
     } break;
 
