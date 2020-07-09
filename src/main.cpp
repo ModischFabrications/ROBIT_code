@@ -218,6 +218,7 @@ void loop() {
     } break;
 
     case pickupState: {
+      // wait for movement down from transition
       if (servo.isStopped()) {
         servo.moveUp();
         if (servo.isStopped()) {
