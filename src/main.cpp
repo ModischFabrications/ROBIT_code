@@ -96,10 +96,16 @@ void startReturn() {
     state = returnState;
 }
 
+void startFinal() {
+    motors.stop();
+    state = finalState;
+}
+
 void line_found() {
     DEBUG_PRINTLN("line_found");
-    if (state == returnState || state == finalState) {
-        state = finalState;
+    if (state == finalState) return;
+    if (state == returnState) {
+        startFinal();
         // done!
         return;
     }
@@ -245,7 +251,7 @@ void loop() {
         //FastLED.showColor(CRGB::White);
         // rainbow!
         fill_rainbow(lights.leds, lights.N_LEDS, beatsin16(20, 0, 359));
-        motors.stop();
+
         //delay(1000);
     } break;
     }
