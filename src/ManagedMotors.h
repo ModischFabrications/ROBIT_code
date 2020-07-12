@@ -11,8 +11,8 @@ class ManagedMotors {
     // experimental results
     const int8_t MOTOR_RIGHT_TUNING = -10;
 
-    const uint8_t P_REGULATION_FACTOR = 50;
-    const uint8_t MAX_TRIM_FACTOR = 0.5f;
+    const uint8_t P_REGULATION_FACTOR = 40;
+    const float MAX_TRIM_FACTOR = 0.5f;
 
     Motors motors = Motors();
     Gyro gyro;
@@ -83,9 +83,11 @@ class ManagedMotors {
      * necessary to trim movement direction from gyro readouts
      * */
     void update() {
+      if (trim) {
         int16_t curr_angle = gyro.getAngleZ();
         if (curr_angle != targetAngle) {
             trim_direction(curr_angle, targetAngle);
         }
+      }
     }
 };
