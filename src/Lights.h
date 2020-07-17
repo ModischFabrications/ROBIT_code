@@ -28,9 +28,8 @@ class Lights {
         // prevent brownouts
         FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_MILLIAMPS);
 
+        // .show() is included
         FastLED.showColor(CRGB::Black);
-        // TODO: might be useless, evaluate
-        FastLED.show();
     }
 
     /**
