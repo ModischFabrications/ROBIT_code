@@ -135,6 +135,15 @@ void showState(FSMstates state) {
     FastLED.show();
 }
 
+void showError(const CRGB color, const __FlashStringHelper *msg) {
+    lights.leds[LED_ERR] = color;
+    DEBUG_PRINT("[Error] ");
+    DEBUG_PRINTLN(msg);
+    // wait for the user to see it
+    delay(10000);
+    restart();
+}
+
 void setup() {
 #ifdef DEBUG
     Serial.begin(115200);
@@ -160,6 +169,10 @@ void setup() {
 
     // clear ultrasonic sensor
     servo.moveUp();
+    servo.waitUntilStopped();
+
+    if (magnet.detected()) showError(CRGB::Brown, F("magnet still attached"));
+    if (line.detected()) showError(CRGB::Red, F("starting on line"));
 }
 
 void loop() {
