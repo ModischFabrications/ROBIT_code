@@ -9,7 +9,7 @@ class Lights {
     // statics needed to allow FastLED template parameters
     static const uint8_t PIN_LEDS = 4;
 
-    const uint16_t MAX_BRIGHTNESS = 200;
+    const uint16_t MAX_BRIGHTNESS = 100;
     const uint16_t MAX_MILLIAMPS = 300;
 
     const uint16_t T_ANIMATION_MS = (1 * 1000);
