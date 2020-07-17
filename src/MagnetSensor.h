@@ -13,6 +13,9 @@ class MagnetSensor {
      * True if a magnet is close.
      * */
     bool detected() {
-        return digitalRead(PIN_HALL);
+        bool detected = digitalRead(PIN_HALL);
+        DEBUG_PRINT("magnet detected? ");
+        DEBUG_PRINTLN(detected);
+        return detected;
     }
 };
