@@ -41,4 +41,12 @@ public:
   bool isStopped() {
     return servo.isStopped();
   }
+
+  void waitUntilStopped() {
+    while (!servo.isStopped())
+    {
+      this->update();
+      delay(1);
+    }
+  }
 };
