@@ -10,13 +10,13 @@ class LineSensor {
     void begin() { pinMode(PIN_LINESENSOR, INPUT); }
 
     void registerListener(void (*listener)(void)) {
-        attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), listener, RISING);
+        attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), listener, FALLING);
     }
 
     /**
      * Check if line is currently detected
      * */
     bool detected() {
-        return digitalRead(PIN_LINESENSOR);
+        return !digitalRead(PIN_LINESENSOR);
     }
 };
