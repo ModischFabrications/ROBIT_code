@@ -78,14 +78,21 @@ void startReverse() {
     state = reverseState;
 }
 
+// helper function, true polar calculations might be better
+bool clockwiseIsShortest(int16_t from_angle, int16_t to_angle) {
+    int16_t missingAngle = (to_angle - from_angle);
+
+    return missingAngle > 0 || missingAngle < -180;
+}
+
 void startAlign() {
     // shortest turn direction
-    if ((angleOfSmallestDistance - gyro.getAngleZ()) < 180) {
-        motors.turn(-0.1);
-        alignClockwise = false;
-    } else {
-        motors.turn(0.1);
+    if (clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
         alignClockwise = true;
+        motors.turn(0.1);
+    } else {
+        alignClockwise = false;
+        motors.turn(-0.1);
     }
 
     state = alignToTargetState;
@@ -219,18 +226,28 @@ void loop() {
     } break;
 
     case alignToTargetState: {
+        if (true) {
+            DEBUG_PRINT("clockwise: ");
+            DEBUG_PRINT(alignClockwise);
+            DEBUG_PRINT(" | angle: ");
+            DEBUG_PRINT(gyro.getAngleZ());
+            DEBUG_PRINT(" | target angle: ");
+            DEBUG_PRINTLN(angleOfSmallestDistance);
+            delay(100);
+        }
+
         // turn to face shortest distance
-        // approximated comparison not actually necessary right now
+        // approximated comparison not actually helpful?
+        // abs((gyro.getAngleZ()%360 - angleOfSmallestDistance)) < 4
         if (alignClockwise) {
-            if (gyro.getAngleZ() >= angleOfSmallestDistance) {
+            if (!clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
                 startApproach();
             }
         } else {
-            if (gyro.getAngleZ() <= angleOfSmallestDistance) {
+            if (clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
                 startApproach();
             }
         }
-
     } break;
 
     case approachState: {
