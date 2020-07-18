@@ -59,7 +59,7 @@ volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
-void(* restart) (void) = 0;
+void (*restart)(void) = 0;
 
 void startSearch() {
     initial_angle = gyro.getAngleZ();
@@ -81,11 +81,11 @@ void startReverse() {
 void startAlign() {
     // shortest turn direction
     if ((angleOfSmallestDistance - gyro.getAngleZ()) < 180) {
-      motors.turn(-0.1);
-      alignClockwise = false;
+        motors.turn(-0.1);
+        alignClockwise = false;
     } else {
-      motors.turn(0.1);
-      alignClockwise = true;
+        motors.turn(0.1);
+        alignClockwise = true;
     }
 
     state = alignToTargetState;
@@ -115,7 +115,8 @@ void startFinal() {
 
 void line_found() {
     DEBUG_PRINTLN("line_found");
-    if (state == finalState) return;
+    if (state == finalState)
+        return;
     if (state == returnState) {
         startFinal();
         // done!
@@ -142,7 +143,7 @@ void showState(FSMstates state) {
     FastLED.show();
 }
 
-void showError(const CRGB color, const __FlashStringHelper *msg) {
+void showError(const CRGB color, const __FlashStringHelper* msg) {
     lights.leds[LED_ERR] = color;
     DEBUG_PRINT("[Error] ");
     DEBUG_PRINTLN(msg);
@@ -172,14 +173,17 @@ void setup() {
 
     gyro.update();
     // movement detected without actually moving is a sign of wrong gyro startup
-    if (gyro.getAngleZ() != 0) restart(); // software reset
+    if (gyro.getAngleZ() != 0)
+        restart(); // software reset
 
     // clear ultrasonic sensor
     servo.moveUp();
     servo.waitUntilStopped();
 
-    if (magnet.detected()) showError(CRGB::Brown, F("magnet still attached"));
-    if (line.detected()) showError(CRGB::Red, F("starting on line"));
+    if (magnet.detected())
+        showError(CRGB::Brown, F("magnet still attached"));
+    if (line.detected())
+        showError(CRGB::Red, F("starting on line"));
 }
 
 void loop() {
@@ -190,8 +194,9 @@ void loop() {
 
     switch (state) {
     case initState: {
-      // waiting until servo reached upper position, timeout set by library
-      if (servo.isStopped()) startSearch();
+        // waiting until servo reached upper position, timeout set by library
+        if (servo.isStopped())
+            startSearch();
     } break;
 
     case searchState: {
@@ -218,20 +223,20 @@ void loop() {
         // turn to face shortest distance
         // approximated comparison not actually necessary right now
         if (alignClockwise) {
-          if (gyro.getAngleZ() >= angleOfSmallestDistance) {
-              startApproach();
-          }
+            if (gyro.getAngleZ() >= angleOfSmallestDistance) {
+                startApproach();
+            }
         } else {
           if (gyro.getAngleZ() <= angleOfSmallestDistance) {
-              startApproach();
-          }
+                startApproach();
+            }
         }
 
     } break;
 
     case approachState: {
         uint16_t distance = sonar.get_min_distance();
-
+        
         if (distance == Sonar::MAX_DISTANCE) {
             // lost it again
             startSearch();
@@ -253,18 +258,18 @@ void loop() {
     } break;
 
     case pickupState: {
-      // wait for movement down from transition
-      if (servo.isStopped()) {
-        servo.moveUp();
+        // wait for movement down from transition
         if (servo.isStopped()) {
-          if (magnet.detected()) {
-            // found!
-            startReturn();
-          } else {
-            startReverse();
-          }
+            servo.moveUp();
+            if (servo.isStopped()) {
+                if (magnet.detected()) {
+                    // found!
+                    startReturn();
+                } else {
+                    startReverse();
+                }
+            }
         }
-      }
     } break;
 
     case returnState: {
