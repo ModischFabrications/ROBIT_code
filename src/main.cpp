@@ -52,6 +52,7 @@ const uint8_t HeartbeatsPerMinute = 60;
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
+int16_t alignClockwise = false;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
@@ -78,8 +79,14 @@ void startReverse() {
 }
 
 void startAlign() {
-    // TODO: find shortest turn direction
-    motors.turn(-0.1);
+    // shortest turn direction
+    if ((angleOfSmallestDistance - gyro.getAngleZ()) < 180) {
+      motors.turn(-0.1);
+      alignClockwise = false;
+    } else {
+      motors.turn(0.1);
+      alignClockwise = true;
+    }
 
     state = alignToTargetState;
 }
@@ -154,7 +161,7 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-    line.begin();
+    line.begin(true); // true: using a floor with a light color, false: floor with a dark color
 
     line.registerListener(line_found);
     // driveTest();
@@ -199,7 +206,7 @@ void loop() {
             // full rotation
             if (smallestDistanceFound == Sonar::MAX_DISTANCE) {
                 // nothing found
-                // TODO: random move to new search position
+                startReverse();
                 return;
             }
             startAlign();
@@ -210,8 +217,14 @@ void loop() {
     case alignToTargetState: {
         // turn to face shortest distance
         // approximated comparison not actually necessary right now
-        if (gyro.getAngleZ() <= angleOfSmallestDistance) {
-            startApproach();
+        if (alignClockwise) {
+          if (gyro.getAngleZ() >= angleOfSmallestDistance) {
+              startApproach();
+          }
+        } else {
+          if (gyro.getAngleZ() <= angleOfSmallestDistance) {
+              startApproach();
+          }
         }
 
     } break;
@@ -248,8 +261,7 @@ void loop() {
             // found!
             startReturn();
           } else {
-            // TODO: maybe reverse first
-            startSearch();
+            startReverse();
           }
         }
       }
