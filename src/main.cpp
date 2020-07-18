@@ -46,7 +46,7 @@ const uint8_t LED_ERR = 9;
 const uint8_t LED_HB = 8;
 const CRGB color_HB = CRGB::Orange;
 
-const uint16_t targetLoopDuration = 20;
+const uint16_t targetLoopDuration = 10;
 const uint8_t HeartbeatsPerMinute = 60;
 
 uint16_t smallestDistanceFound = 300;
@@ -66,7 +66,7 @@ void startSearch() {
     smallestDistanceFound = Sonar::MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
 
-    motors.turn(0.5);
+    motors.turn(0.2);
 
     state = searchState;
 }
