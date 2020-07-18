@@ -114,7 +114,6 @@ void startFinal() {
 }
 
 void line_found() {
-    DEBUG_PRINTLN("line_found");
     if (state == finalState)
         return;
     if (state == returnState) {
@@ -162,7 +161,7 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-    line.begin(true); // true: using a floor with a light color, false: floor with a dark color
+    line.begin(false); // true: using a floor with a light color, false: floor with a dark color
 
     line.registerListener(line_found);
     // driveTest();
@@ -227,7 +226,7 @@ void loop() {
                 startApproach();
             }
         } else {
-          if (gyro.getAngleZ() <= angleOfSmallestDistance) {
+            if (gyro.getAngleZ() <= angleOfSmallestDistance) {
                 startApproach();
             }
         }
@@ -236,9 +235,13 @@ void loop() {
 
     case approachState: {
         uint16_t distance = sonar.get_min_distance();
-        
-        if (distance == Sonar::MAX_DISTANCE) {
-            // lost it again
+
+        // anything else can't be our treasure and needs to be ignored
+        // TODO: fix it, but it's a bigger problem
+        if (false && distance > smallestDistanceFound + 10) {
+            // lost it again, continue a bit in the last direction and try again
+            DEBUG_PRINTLN("lost it");
+            delay(100);
             startSearch();
             return;
         }
