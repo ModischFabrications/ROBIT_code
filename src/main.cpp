@@ -41,6 +41,11 @@ enum FSMstates : uint8_t {
 
 volatile FSMstates state = initState;
 
+const uint8_t LED_ERR = 9;
+
+const uint8_t LED_HB = 8;
+const CRGB color_HB = CRGB::Orange;
+
 const uint16_t targetLoopDuration = 20;
 const uint8_t HeartbeatsPerMinute = 60;
 
@@ -125,12 +130,18 @@ void driveTest() {
 }
 
 void showState(FSMstates state) {
-    DEBUG_PRINT("state: ");
-    DEBUG_PRINTLN(state);
-
-    fill_solid(lights.leds, lights.N_LEDS - 1, CRGB::Black);
+    fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
     lights.leds[(uint8_t)state] = CRGB::Blue;
     FastLED.show();
+}
+
+void showError(const CRGB color, const __FlashStringHelper *msg) {
+    lights.leds[LED_ERR] = color;
+    DEBUG_PRINT("[Error] ");
+    DEBUG_PRINTLN(msg);
+    // wait for the user to see it
+    delay(10000);
+    restart();
 }
 
 void setup() {
@@ -158,6 +169,10 @@ void setup() {
 
     // clear ultrasonic sensor
     servo.moveUp();
+    servo.waitUntilStopped();
+
+    if (magnet.detected()) showError(CRGB::Brown, F("magnet still attached"));
+    if (line.detected()) showError(CRGB::Red, F("starting on line"));
 }
 
 void loop() {
@@ -241,18 +256,12 @@ void loop() {
     } break;
 
     case returnState: {
-        // wait for interrupt
-        // delay() won't affect the ISR
-        //delay(10);
+        // wait for interrupt, delay is applied by constant loop time
     } break;
 
     case finalState: {
-        // done.
-        //FastLED.showColor(CRGB::White);
-        // rainbow!
+        // done, show how happy you are
         fill_rainbow(lights.leds, lights.N_LEDS, beatsin16(20, 0, 359));
-
-        //delay(1000);
     } break;
     }
 
@@ -260,8 +269,8 @@ void loop() {
     motors.update();
 
     // fade between black and orange to look like a heartbeat
-    CRGB curr_color = blend(CRGB::Black, CRGB::Orange, beatsin8(HeartbeatsPerMinute, 0, 255));
-    lights.leds[lights.N_LEDS - 1] = curr_color;
+    CRGB curr_color = blend(CRGB::Black, color_HB, beatsin8(HeartbeatsPerMinute, 0, 255));
+    lights.leds[LED_HB] = curr_color;
     FastLED.show();
 
     // keep constant loop duration by aligning to target duration
