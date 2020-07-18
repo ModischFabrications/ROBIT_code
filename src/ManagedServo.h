@@ -14,8 +14,8 @@ private:
 public:
   void begin() {
     // endstops tuned for specific servo
-    servo.setMin(500);
-    servo.setMax(1800);
+    servo.setMin(900);
+    servo.setMax(2200);
     servo.setSpeed(5);
     servo.setInitialPosition(0.9);
     servo.setDetachAtMax(true);
@@ -40,5 +40,13 @@ public:
 
   bool isStopped() {
     return servo.isStopped();
+  }
+
+  void waitUntilStopped() {
+    while (!servo.isStopped())
+    {
+      this->update();
+      delay(1);
+    }
   }
 };
