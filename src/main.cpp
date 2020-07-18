@@ -52,7 +52,7 @@ const uint8_t HeartbeatsPerMinute = 60;
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
-int16_t alignClockwise = false;
+bool alignClockwise = false;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
@@ -274,6 +274,9 @@ void loop() {
     case finalState: {
         // done, show how happy you are
         fill_rainbow(lights.leds, lights.N_LEDS, beatsin16(20, 0, 359));
+        FastLED.show();
+        // prevent heartbeat and other controls
+        return;
     } break;
     }
 
