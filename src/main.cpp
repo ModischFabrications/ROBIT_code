@@ -133,16 +133,6 @@ void line_found() {
     startReverse();
 }
 
-void driveTest() {
-    while (1) {
-        float i = -1;
-        for (; i < 1; i += 0.1) {
-            motors.move(i);
-            delay(500);
-        }
-    }
-}
-
 void showState(FSMstates state) {
     fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
     lights.leds[(uint8_t)state] = CRGB::Blue;
@@ -168,10 +158,10 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-    line.begin(false); // true: using a floor with a light color, false: floor with a dark color
+    line.begin(false); 
 
     line.registerListener(line_found);
-    // driveTest();
+    
     // prevent motors from spinning on startup
     motors.stop();
 
