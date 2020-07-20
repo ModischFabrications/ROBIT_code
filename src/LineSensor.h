@@ -8,6 +8,9 @@ class LineSensor {
     bool light_floor = false; // set the color of the floor, adjust the color of the tape accordingly
 
   public:
+    /**
+     * true: using a floor with a light color, false: floor with a dark color
+     * */
     void begin(const bool lightFloor) {
       light_floor = lightFloor;
       pinMode(PIN_LINESENSOR, INPUT);
