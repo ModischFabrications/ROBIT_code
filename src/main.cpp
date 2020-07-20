@@ -28,16 +28,17 @@ MagnetSensor magnet;
 LineSensor line;
 
 // keep smaller than N_LEDs for printout!
+// enumerated to compare against real output
 enum FSMstates : uint8_t {
-    initState,
-    searchState,
-    alignToTargetState,
-    approachState,
-    adjustState,
-    reverseState,
-    pickupState,
-    returnState,
-    finalState
+    initState = 0,
+    searchState = 1,
+    alignToTargetState = 2,
+    approachState = 3,
+    adjustState = 4,
+    reverseState = 5,
+    pickupState = 6,
+    returnState = 7,
+    finalState = 8
 };
 
 volatile FSMstates state = initState;
