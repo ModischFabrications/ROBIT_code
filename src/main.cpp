@@ -97,6 +97,9 @@ void startApproach() {
 }
 
 void startAdjust() {
+    // TODO: evaluate if moving a bit closer actually helps that much
+    motors.move(0.1);
+    delay(500);
     motors.stop();
     adjustingClockwise = false;
     // update to current angle
