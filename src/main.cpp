@@ -52,7 +52,6 @@ const uint8_t HeartbeatsPerMinute = 60;
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
-bool alignClockwise = false;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
@@ -78,22 +77,9 @@ void startReverse() {
     state = reverseState;
 }
 
-// helper function, true polar calculations might be better
-bool clockwiseIsShortest(int16_t from_angle, int16_t to_angle) {
-    int16_t missingAngle = (to_angle - from_angle);
-
-    return missingAngle > 0 || missingAngle < -180;
-}
-
 void startAlign() {
-    // shortest turn direction
-    if (clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
-        alignClockwise = true;
-        motors.turn(0.1);
-    } else {
-        alignClockwise = false;
-        motors.turn(-0.1);
-    }
+    // TODO: find shortest turn direction (see #42)
+    motors.turn(-0.1);
 
     state = alignToTargetState;
 }
@@ -158,10 +144,10 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-    line.begin(false); 
+    line.begin(false);
 
     line.registerListener(line_found);
-    
+
     // prevent motors from spinning on startup
     motors.stop();
 
@@ -216,27 +202,10 @@ void loop() {
     } break;
 
     case alignToTargetState: {
-        if (true) {
-            DEBUG_PRINT("clockwise: ");
-            DEBUG_PRINT(alignClockwise);
-            DEBUG_PRINT(" | angle: ");
-            DEBUG_PRINT(gyro.getAngleZ());
-            DEBUG_PRINT(" | target angle: ");
-            DEBUG_PRINTLN(angleOfSmallestDistance);
-            delay(100);
-        }
-
         // turn to face shortest distance
-        // approximated comparison not actually helpful?
-        // abs((gyro.getAngleZ()%360 - angleOfSmallestDistance)) < 4
-        if (alignClockwise) {
-            if (!clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
-                startApproach();
-            }
-        } else {
-            if (clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
-                startApproach();
-            }
+        // approximated comparison not actually necessary right now
+        if (gyro.getAngleZ() <= angleOfSmallestDistance) {
+            startApproach();
         }
     } break;
 
