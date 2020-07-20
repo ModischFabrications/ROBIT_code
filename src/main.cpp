@@ -33,6 +33,7 @@ enum FSMstates : uint8_t {
     searchState,
     alignToTargetState,
     approachState,
+    adjustState,
     reverseState,
     pickupState,
     returnState,
@@ -52,6 +53,9 @@ const uint8_t HeartbeatsPerMinute = 60;
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
+uint16_t distanceAtLost = 0;
+bool adjustingClockwise = false;
+const uint16_t adjustmentAngle = 10;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
@@ -88,6 +92,16 @@ void startApproach() {
     motors.move(0.1);
 
     state = approachState;
+}
+
+void startAdjust() {
+    motors.stop();
+    adjustingClockwise = false;
+    // update to current angle
+    angleOfSmallestDistance = gyro.getAngleZ();
+    // begin by turning counterclockwise
+    motors.turn(-0.1);
+    state = adjustState;
 }
 
 void startPickup() {
@@ -215,10 +229,10 @@ void loop() {
         // anything else can't be our treasure and needs to be ignored
         // TODO: fix it, but it's a bigger problem
         if (false && distance > smallestDistanceFound + 10) {
-            // lost it again, continue a bit in the last direction and try again
+            // lost it again
             DEBUG_PRINTLN("lost it");
-            delay(100);
-            startSearch();
+            distanceAtLost = distance;
+            startAdjust();
             return;
         }
 
@@ -228,6 +242,30 @@ void loop() {
             return;
         }
 
+    } break;
+
+    case adjustState: {
+        uint16_t current_distance = sonar.get_min_distance();
+        int16_t current_angle = gyro.getAngleZ();
+
+        if (current_distance < distanceAtLost) {
+            DEBUG_PRINTLN("found it again");
+            startApproach();
+            return;
+        }
+
+        if (!adjustingClockwise) {
+          if (current_angle <= angleOfSmallestDistance - adjustmentAngle) {
+            // change direction of adjustment
+            adjustingClockwise = true;
+            motors.turn(0.1);
+          }
+        } else {
+          if (current_angle >= angleOfSmallestDistance + adjustmentAngle) {
+            // not found
+            startSearch();
+          }
+        }
     } break;
 
     case reverseState: {
