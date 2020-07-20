@@ -56,7 +56,7 @@ int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
 uint16_t distanceAtLost = 0;
 bool adjustingClockwise = false;
-const uint16_t adjustmentAngle = 10;
+const int16_t adjustmentAngle = 10;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
