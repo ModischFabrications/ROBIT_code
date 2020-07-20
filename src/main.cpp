@@ -70,7 +70,7 @@ void startSearch() {
     smallestDistanceFound = Sonar::MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
 
-    motors.turn(0.2);
+    motors.turn(0.1);
 
     state = searchState;
 }
@@ -119,6 +119,7 @@ void startReturn() {
 void startFinal() {
     motors.stop();
     state = finalState;
+    DEBUG_PRINTLN("We did it!");
 }
 
 void line_found() {
@@ -229,9 +230,9 @@ void loop() {
 
         // anything else can't be our treasure and needs to be ignored
         if (distance > smallestDistanceFound + 10) {
-            // lost it again
-            DEBUG_PRINTLN("lost it");
             distanceAtLost = distance;
+            DEBUG_PRINT("lost it at ");
+            DEBUG_PRINTLN(distanceAtLost);
             startAdjust();
             return;
         }
@@ -255,16 +256,16 @@ void loop() {
         }
 
         if (!adjustingClockwise) {
-          if (current_angle <= angleOfSmallestDistance - adjustmentAngle) {
-            // change direction of adjustment
-            adjustingClockwise = true;
-            motors.turn(0.1);
-          }
+            if (current_angle <= angleOfSmallestDistance - adjustmentAngle) {
+                // change direction of adjustment
+                adjustingClockwise = true;
+                motors.turn(0.1);
+            }
         } else {
-          if (current_angle >= angleOfSmallestDistance + adjustmentAngle) {
-            // not found
-            startSearch();
-          }
+            if (current_angle >= angleOfSmallestDistance + adjustmentAngle) {
+                // not found
+                startSearch();
+            }
         }
     } break;
 
