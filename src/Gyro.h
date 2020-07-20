@@ -29,7 +29,9 @@ class Gyro {
     }
 
     /**
-     *  positive values in clockwise direction
+     * Nearly full range of int16. multiple turns possible. 
+     * Negative values and values larger than 360 are possible!
+     * positive values in clockwise direction.
      * */
     int16_t getAngleZ() { return mpu6050.getAngleZ(); }
 };
