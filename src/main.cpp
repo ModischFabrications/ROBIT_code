@@ -46,27 +46,26 @@ const uint8_t LED_ERR = 9;
 const uint8_t LED_HB = 8;
 const CRGB color_HB = CRGB::Orange;
 
-const uint16_t targetLoopDuration = 10;
+const uint16_t targetLoopDuration = 20;
 const uint8_t HeartbeatsPerMinute = 60;
 
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
-bool alignClockwise = false;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
 
 const uint8_t pickupDistance = 5;
 
-void (*restart)(void) = 0;
+void(* restart) (void) = 0;
 
 void startSearch() {
     initial_angle = gyro.getAngleZ();
     smallestDistanceFound = Sonar::MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
 
-    motors.turn(0.2);
+    motors.turn(0.5);
 
     state = searchState;
 }
@@ -78,22 +77,9 @@ void startReverse() {
     state = reverseState;
 }
 
-// helper function, true polar calculations might be better
-bool clockwiseIsShortest(int16_t from_angle, int16_t to_angle) {
-    int16_t missingAngle = (to_angle - from_angle);
-
-    return missingAngle > 0 || missingAngle < -180;
-}
-
 void startAlign() {
-    // shortest turn direction
-    if (clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
-        alignClockwise = true;
-        motors.turn(0.1);
-    } else {
-        alignClockwise = false;
-        motors.turn(-0.1);
-    }
+    // TODO: find shortest turn direction
+    motors.turn(-0.1);
 
     state = alignToTargetState;
 }
@@ -121,8 +107,8 @@ void startFinal() {
 }
 
 void line_found() {
-    if (state == finalState)
-        return;
+    DEBUG_PRINTLN("line_found");
+    if (state == finalState) return;
     if (state == returnState) {
         startFinal();
         // done!
@@ -133,13 +119,23 @@ void line_found() {
     startReverse();
 }
 
+void driveTest() {
+    while (1) {
+        float i = -1;
+        for (; i < 1; i += 0.1) {
+            motors.move(i);
+            delay(500);
+        }
+    }
+}
+
 void showState(FSMstates state) {
     fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
     lights.leds[(uint8_t)state] = CRGB::Blue;
     FastLED.show();
 }
 
-void showError(const CRGB color, const __FlashStringHelper* msg) {
+void showError(const CRGB color, const __FlashStringHelper *msg) {
     lights.leds[LED_ERR] = color;
     DEBUG_PRINT("[Error] ");
     DEBUG_PRINTLN(msg);
@@ -158,10 +154,10 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-    line.begin(false); 
+    line.begin();
 
     line.registerListener(line_found);
-    
+    // driveTest();
     // prevent motors from spinning on startup
     motors.stop();
 
@@ -169,17 +165,14 @@ void setup() {
 
     gyro.update();
     // movement detected without actually moving is a sign of wrong gyro startup
-    if (gyro.getAngleZ() != 0)
-        restart(); // software reset
+    if (gyro.getAngleZ() != 0) restart(); // software reset
 
     // clear ultrasonic sensor
     servo.moveUp();
     servo.waitUntilStopped();
 
-    if (magnet.detected())
-        showError(CRGB::Brown, F("magnet still attached"));
-    if (line.detected())
-        showError(CRGB::Red, F("starting on line"));
+    if (magnet.detected()) showError(CRGB::Brown, F("magnet still attached"));
+    if (line.detected()) showError(CRGB::Red, F("starting on line"));
 }
 
 void loop() {
@@ -190,9 +183,8 @@ void loop() {
 
     switch (state) {
     case initState: {
-        // waiting until servo reached upper position, timeout set by library
-        if (servo.isStopped())
-            startSearch();
+      // waiting until servo reached upper position, timeout set by library
+      if (servo.isStopped()) startSearch();
     } break;
 
     case searchState: {
@@ -207,7 +199,7 @@ void loop() {
             // full rotation
             if (smallestDistanceFound == Sonar::MAX_DISTANCE) {
                 // nothing found
-                startReverse();
+                // TODO: random move to new search position
                 return;
             }
             startAlign();
@@ -216,39 +208,19 @@ void loop() {
     } break;
 
     case alignToTargetState: {
-        if (true) {
-            DEBUG_PRINT("clockwise: ");
-            DEBUG_PRINT(alignClockwise);
-            DEBUG_PRINT(" | angle: ");
-            DEBUG_PRINT(gyro.getAngleZ());
-            DEBUG_PRINT(" | target angle: ");
-            DEBUG_PRINTLN(angleOfSmallestDistance);
-            delay(100);
+        // turn to face shortest distance
+        // approximated comparison not actually necessary right now
+        if (gyro.getAngleZ() <= angleOfSmallestDistance) {
+            startApproach();
         }
 
-        // turn to face shortest distance
-        // approximated comparison not actually helpful?
-        // abs((gyro.getAngleZ()%360 - angleOfSmallestDistance)) < 4
-        if (alignClockwise) {
-            if (!clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
-                startApproach();
-            }
-        } else {
-            if (clockwiseIsShortest(gyro.getAngleZ(), angleOfSmallestDistance)) {
-                startApproach();
-            }
-        }
     } break;
 
     case approachState: {
         uint16_t distance = sonar.get_min_distance();
 
-        // anything else can't be our treasure and needs to be ignored
-        // TODO: fix it, but it's a bigger problem
-        if (false && distance > smallestDistanceFound + 10) {
-            // lost it again, continue a bit in the last direction and try again
-            DEBUG_PRINTLN("lost it");
-            delay(100);
+        if (distance == Sonar::MAX_DISTANCE) {
+            // lost it again
             startSearch();
             return;
         }
@@ -268,18 +240,19 @@ void loop() {
     } break;
 
     case pickupState: {
-        // wait for movement down from transition
+      // wait for movement down from transition
+      if (servo.isStopped()) {
+        servo.moveUp();
         if (servo.isStopped()) {
-            servo.moveUp();
-            if (servo.isStopped()) {
-                if (magnet.detected()) {
-                    // found!
-                    startReturn();
-                } else {
-                    startReverse();
-                }
-            }
+          if (magnet.detected()) {
+            // found!
+            startReturn();
+          } else {
+            // TODO: maybe reverse first
+            startSearch();
+          }
         }
+      }
     } break;
 
     case returnState: {
@@ -289,9 +262,6 @@ void loop() {
     case finalState: {
         // done, show how happy you are
         fill_rainbow(lights.leds, lights.N_LEDS, beatsin16(20, 0, 359));
-        FastLED.show();
-        // prevent heartbeat and other controls
-        return;
     } break;
     }
 
