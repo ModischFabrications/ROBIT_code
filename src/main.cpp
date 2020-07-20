@@ -28,15 +28,17 @@ MagnetSensor magnet;
 LineSensor line;
 
 // keep smaller than N_LEDs for printout!
+// enumerated to compare against real output
 enum FSMstates : uint8_t {
-    initState,
-    searchState,
-    alignToTargetState,
-    approachState,
-    reverseState,
-    pickupState,
-    returnState,
-    finalState
+    initState = 0,
+    searchState = 1,
+    alignToTargetState = 2,
+    approachState = 3,
+    adjustState = 4,
+    reverseState = 5,
+    pickupState = 6,
+    returnState = 7,
+    finalState = 8
 };
 
 volatile FSMstates state = initState;
@@ -52,6 +54,9 @@ const uint8_t HeartbeatsPerMinute = 60;
 uint16_t smallestDistanceFound = 300;
 int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
+uint16_t distanceAtLost = 0;
+bool adjustingClockwise = false;
+const int16_t adjustmentAngle = 45;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
@@ -65,7 +70,7 @@ void startSearch() {
     smallestDistanceFound = Sonar::MAX_DISTANCE;
     angleOfSmallestDistance = initial_angle;
 
-    motors.turn(0.2);
+    motors.turn(0.1);
 
     state = searchState;
 }
@@ -85,9 +90,20 @@ void startAlign() {
 }
 
 void startApproach() {
+    distanceAtLost = smallestDistanceFound;
     motors.move(0.1);
 
     state = approachState;
+}
+
+void startAdjust() {
+    motors.stop();
+    adjustingClockwise = false;
+    // update to current angle
+    angleOfSmallestDistance = gyro.getAngleZ();
+    // begin by turning counterclockwise
+    motors.turn(-0.1);
+    state = adjustState;
 }
 
 void startPickup() {
@@ -104,6 +120,7 @@ void startReturn() {
 void startFinal() {
     motors.stop();
     state = finalState;
+    DEBUG_PRINTLN("We did it!");
 }
 
 void line_found() {
@@ -213,12 +230,10 @@ void loop() {
         uint16_t distance = sonar.get_min_distance();
 
         // anything else can't be our treasure and needs to be ignored
-        // TODO: fix it, but it's a bigger problem
-        if (false && distance > smallestDistanceFound + 10) {
-            // lost it again, continue a bit in the last direction and try again
-            DEBUG_PRINTLN("lost it");
-            delay(100);
-            startSearch();
+        if (distance > smallestDistanceFound + 10) {
+            DEBUG_PRINT("lost it at ");
+            DEBUG_PRINTLN(distanceAtLost);
+            startAdjust();
             return;
         }
 
@@ -228,6 +243,35 @@ void loop() {
             return;
         }
 
+        // decrease distance while searching
+        distanceAtLost = distance;
+
+    } break;
+
+    case adjustState: {
+        uint16_t current_distance = sonar.get_min_distance();
+        int16_t current_angle = gyro.getAngleZ();
+
+        if (current_distance < distanceAtLost + 10) {
+            DEBUG_PRINT("found it again at ");
+            DEBUG_PRINTLN(current_distance);
+            startApproach();
+            return;
+        }
+
+        if (!adjustingClockwise) {
+            if (current_angle <= angleOfSmallestDistance - adjustmentAngle) {
+                // not found on the left side, try the right one
+                adjustingClockwise = true;
+                motors.turn(0.1);
+            }
+        } else {
+            if (current_angle >= angleOfSmallestDistance + adjustmentAngle) {
+                // not found
+                DEBUG_PRINTLN("Could not find it again, restarting search");
+                startSearch();
+            }
+        }
     } break;
 
     case reverseState: {
