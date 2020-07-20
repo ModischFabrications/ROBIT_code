@@ -56,7 +56,7 @@ int16_t angleOfSmallestDistance = 0;
 int16_t initial_angle = 0;
 uint16_t distanceAtLost = 0;
 bool adjustingClockwise = false;
-const int16_t adjustmentAngle = 10;
+const int16_t adjustmentAngle = 45;
 
 const uint16_t reverseForMS = 1000;
 volatile uint32_t reverseUntilTime = 0;
@@ -90,6 +90,7 @@ void startAlign() {
 }
 
 void startApproach() {
+    distanceAtLost = smallestDistanceFound;
     motors.move(0.1);
 
     state = approachState;
@@ -230,7 +231,6 @@ void loop() {
 
         // anything else can't be our treasure and needs to be ignored
         if (distance > smallestDistanceFound + 10) {
-            distanceAtLost = distance;
             DEBUG_PRINT("lost it at ");
             DEBUG_PRINTLN(distanceAtLost);
             startAdjust();
@@ -243,27 +243,32 @@ void loop() {
             return;
         }
 
+        // decrease distance while searching
+        distanceAtLost = distance;
+
     } break;
 
     case adjustState: {
         uint16_t current_distance = sonar.get_min_distance();
         int16_t current_angle = gyro.getAngleZ();
 
-        if (current_distance < distanceAtLost) {
-            DEBUG_PRINTLN("found it again");
+        if (current_distance < distanceAtLost + 10) {
+            DEBUG_PRINT("found it again at ");
+            DEBUG_PRINTLN(current_distance);
             startApproach();
             return;
         }
 
         if (!adjustingClockwise) {
             if (current_angle <= angleOfSmallestDistance - adjustmentAngle) {
-                // change direction of adjustment
+                // not found on the left side, try the right one
                 adjustingClockwise = true;
                 motors.turn(0.1);
             }
         } else {
             if (current_angle >= angleOfSmallestDistance + adjustmentAngle) {
                 // not found
+                DEBUG_PRINTLN("Could not find it again, restarting search");
                 startSearch();
             }
         }
