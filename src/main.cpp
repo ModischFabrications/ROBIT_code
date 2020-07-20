@@ -228,8 +228,7 @@ void loop() {
         uint16_t distance = sonar.get_min_distance();
 
         // anything else can't be our treasure and needs to be ignored
-        // TODO: fix it, but it's a bigger problem
-        if (false && distance > smallestDistanceFound + 10) {
+        if (distance > smallestDistanceFound + 10) {
             // lost it again
             DEBUG_PRINTLN("lost it");
             distanceAtLost = distance;
