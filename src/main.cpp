@@ -202,7 +202,7 @@ void loop() {
     } break;
 
     case searchState: {
-        uint16_t current_distance = sonar.get_distance();
+        uint8_t current_distance = sonar.get_min_distance();
         int16_t current_angle = gyro.getAngleZ();
         if (current_distance < smallestDistanceFound) {
             // found something closer
