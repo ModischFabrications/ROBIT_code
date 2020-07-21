@@ -43,10 +43,11 @@ enum FSMstates : uint8_t {
 
 volatile FSMstates state = initState;
 
-const uint8_t LED_ERR = 9;
+typedef void (*async)();
+volatile async async_call = nullptr;
 
 const uint8_t LED_HB = 8;
-const CRGB color_HB = CRGB::Orange;
+const uint8_t LED_ERR = 9;
 
 const uint16_t targetLoopDuration = 10;
 const uint8_t HeartbeatsPerMinute = 60;
@@ -70,6 +71,13 @@ void showState(FSMstates state) {
     fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
     lights.leds[(uint8_t)state] = CRGB::Blue;
     FastLED.show();
+}
+
+/**
+ * Use this to schedule complex calls from ISRs
+ * */
+void callAsync(async function) {
+    async_call = function;
 }
 
 void setState(FSMstates new_state) {
@@ -152,22 +160,25 @@ void startFinal() {
 }
 
 void line_found() {
+    // don't do anything expensive here or this will crash the processor
     if (state == finalState || state == reverseState || state == initState)
         return;
     if (state == returnState) {
-        startFinal();
+        callAsync(startFinal);
         // done!
         return;
     }
 
     // assume we only hit the line on forward movements
     // this won't look for a better target but at least it prevents runoffs
-    startReverse();
+    callAsync(startReverse);
 }
 
 void showDistance(uint8_t distance) {
     uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * 255;
-    CRGB new_color = blend(CRGB::Violet, CRGB::Black, rel_distance);
+    DEBUG_PRINTLN(rel_distance);
+    CRGB new_color = CRGB::DarkGreen;
+    new_color.nscale8_video(255-rel_distance);
     // 0 is unused, better than hiding currently active state
     lights.leds[0] = new_color;
     FastLED.show();
@@ -183,7 +194,7 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-    line.begin(false);
+    line.begin(true);
 
     line.registerListener(line_found);
 
@@ -208,6 +219,8 @@ void setup() {
 }
 
 void loop() {
+    // keep movement straight
+    motors.update();
     gyro.update();
     servo.update();
 
@@ -331,11 +344,15 @@ void loop() {
     } break;
     }
 
-    // keep movement straight
-    motors.update();
+    // async setter for ISRs
+    if (async_call != nullptr) {
+        DEBUG_PRINTLN("Calling async function");
+        async_call();
+        async_call = nullptr;
+    }
 
-    // fade between black and orange to look like a heartbeat
-    CRGB curr_color = blend(CRGB::Black, color_HB, beatsin8(HeartbeatsPerMinute, 0, 255));
+    // fade between black and orange to look like a heartbeat; don't use max brightness
+    CRGB curr_color = blend(CRGB::Black, CRGB::DarkOrange, beatsin8(HeartbeatsPerMinute, 0, 150));
     lights.leds[LED_HB] = curr_color;
     FastLED.show();
 
