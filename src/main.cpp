@@ -81,6 +81,9 @@ void showError(const CRGB color, const __FlashStringHelper* msg) {
     lights.leds[LED_ERR] = color;
     DEBUG_PRINT("[Error] ");
     DEBUG_PRINTLN(msg);
+    motors.stop();
+    // prevent interrupt
+    state = initState;
     // wait for the user to see it
     delay(10000);
     restart();
@@ -148,7 +151,7 @@ void startFinal() {
 }
 
 void line_found() {
-    if (state == finalState)
+    if (state == finalState || state == reverseState || state == initState)
         return;
     if (state == returnState) {
         startFinal();
@@ -157,6 +160,7 @@ void line_found() {
     }
 
     // assume we only hit the line on forward movements
+    // this won't look for a better target but at least it prevents runoffs
     startReverse();
 }
 
