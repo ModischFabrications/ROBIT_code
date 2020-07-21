@@ -145,6 +145,7 @@ void startReturn() {
 }
 
 void startFinal() {
+    line.removeListener();
     motors.stop();
     setState(finalState);
     DEBUG_PRINTLN("We did it!");
