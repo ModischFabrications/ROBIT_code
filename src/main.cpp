@@ -121,7 +121,7 @@ void startApproach() {
 }
 
 void startAdjust() {
-    // TODO: evaluate if moving a bit closer actually helps that much
+    // moving a bit closer helps finding it again
     motors.move(0.1);
     delay(500);
     motors.stop();
@@ -167,7 +167,7 @@ void line_found() {
 void showDistance(uint8_t distance) {
     uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * 255;
     CRGB new_color = blend(CRGB::Violet, CRGB::Black, rel_distance);
-    // soft lerp
+    // 0 is unused, better than hiding currently active state
     lights.leds[0] = new_color;
     FastLED.show();
 }
