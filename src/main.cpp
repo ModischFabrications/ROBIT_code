@@ -65,6 +65,27 @@ const uint8_t pickupDistance = 5;
 
 void (*restart)(void) = 0;
 
+void showState(FSMstates state) {
+    // clear old all old values to prevent undefined states
+    fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
+    lights.leds[(uint8_t)state] = CRGB::Blue;
+    FastLED.show();
+}
+
+void setState(FSMstates new_state) {
+    state = new_state;
+    showState(state);
+}
+
+void showError(const CRGB color, const __FlashStringHelper* msg) {
+    lights.leds[LED_ERR] = color;
+    DEBUG_PRINT("[Error] ");
+    DEBUG_PRINTLN(msg);
+    // wait for the user to see it
+    delay(10000);
+    restart();
+}
+
 void startSearch() {
     initial_angle = gyro.getAngleZ();
     smallestDistanceFound = Sonar::MAX_DISTANCE;
@@ -72,28 +93,28 @@ void startSearch() {
 
     motors.turn(0.1);
 
-    state = searchState;
+    setState(searchState);
 }
 
 void startReverse() {
     motors.move(-0.5);
     reverseUntilTime = millis() + reverseForMS;
 
-    state = reverseState;
+    setState(reverseState);
 }
 
 void startAlign() {
     // TODO: find shortest turn direction (see #42)
     motors.turn(-0.1);
 
-    state = alignToTargetState;
+    setState(alignToTargetState);
 }
 
 void startApproach() {
     distanceAtLost = smallestDistanceFound;
     motors.move(0.1);
 
-    state = approachState;
+    setState(approachState);
 }
 
 void startAdjust() {
@@ -106,23 +127,23 @@ void startAdjust() {
     angleOfSmallestDistance = gyro.getAngleZ();
     // begin by turning counterclockwise
     motors.turn(-0.1);
-    state = adjustState;
+    setState(adjustState);
 }
 
 void startPickup() {
     motors.stop();
     servo.moveDown();
-    state = pickupState;
+    setState(pickupState);
 }
 
 void startReturn() {
     motors.move(0.5);
-    state = returnState;
+    setState(returnState);
 }
 
 void startFinal() {
     motors.stop();
-    state = finalState;
+    setState(finalState);
     DEBUG_PRINTLN("We did it!");
 }
 
@@ -139,19 +160,12 @@ void line_found() {
     startReverse();
 }
 
-void showState(FSMstates state) {
-    fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
-    lights.leds[(uint8_t)state] = CRGB::Blue;
+void showSearchDistance(uint8_t distance) {
+    CRGB curr_color = lights.leds[searchState];
+    CRGB new_color = blend(CRGB::Black, CRGB::Blue, ((float)sonar.MAX_DISTANCE / distance) * 255);
+    // soft lerp
+    lights.leds[searchState] = blend(curr_color, new_color, 200);
     FastLED.show();
-}
-
-void showError(const CRGB color, const __FlashStringHelper* msg) {
-    lights.leds[LED_ERR] = color;
-    DEBUG_PRINT("[Error] ");
-    DEBUG_PRINTLN(msg);
-    // wait for the user to see it
-    delay(10000);
-    restart();
 }
 
 void setup() {
@@ -192,8 +206,6 @@ void loop() {
     gyro.update();
     servo.update();
 
-    showState(state);
-
     switch (state) {
     case initState: {
         // waiting until servo reached upper position, timeout set by library
@@ -204,6 +216,7 @@ void loop() {
     case searchState: {
         uint8_t current_distance = sonar.get_min_distance();
         int16_t current_angle = gyro.getAngleZ();
+        showSearchDistance(current_distance);
         if (current_distance < smallestDistanceFound) {
             // found something closer
             smallestDistanceFound = current_distance;
