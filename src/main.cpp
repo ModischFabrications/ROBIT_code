@@ -165,10 +165,10 @@ void line_found() {
 }
 
 void showSearchDistance(uint8_t distance) {
-    CRGB curr_color = lights.leds[searchState];
-    CRGB new_color = blend(CRGB::Black, CRGB::Blue, ((float)sonar.MAX_DISTANCE / distance) * 255);
+    uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * 255;
+    CRGB new_color = blend(CRGB::Violet, CRGB::Black, rel_distance);
     // soft lerp
-    lights.leds[searchState] = blend(curr_color, new_color, 200);
+    lights.leds[0] = new_color;
     FastLED.show();
 }
 
