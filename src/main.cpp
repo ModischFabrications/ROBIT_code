@@ -164,7 +164,7 @@ void line_found() {
     startReverse();
 }
 
-void showSearchDistance(uint8_t distance) {
+void showDistance(uint8_t distance) {
     uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * 255;
     CRGB new_color = blend(CRGB::Violet, CRGB::Black, rel_distance);
     // soft lerp
@@ -219,8 +219,8 @@ void loop() {
 
     case searchState: {
         uint8_t current_distance = sonar.get_min_distance();
+        showDistance(current_distance);
         int16_t current_angle = gyro.getAngleZ();
-        showSearchDistance(current_distance);
         if (current_distance < smallestDistanceFound) {
             // found something closer
             smallestDistanceFound = current_distance;
@@ -247,29 +247,31 @@ void loop() {
     } break;
 
     case approachState: {
-        uint16_t distance = sonar.get_min_distance();
+        uint16_t current_distance = sonar.get_min_distance();
+        showDistance(current_distance);
 
         // anything else can't be our treasure and needs to be ignored
-        if (distance > smallestDistanceFound + 10) {
+        if (current_distance > smallestDistanceFound + 10) {
             DEBUG_PRINT("lost it at ");
             DEBUG_PRINTLN(distanceAtLost);
             startAdjust();
             return;
         }
 
-        if (distance <= pickupDistance) {
+        if (current_distance <= pickupDistance) {
             // reached it
             startPickup();
             return;
         }
 
         // decrease distance while searching
-        distanceAtLost = distance;
+        distanceAtLost = current_distance;
 
     } break;
 
     case adjustState: {
         uint16_t current_distance = sonar.get_min_distance();
+        showDistance(current_distance);
         int16_t current_angle = gyro.getAngleZ();
 
         if (current_distance < distanceAtLost + 10) {
