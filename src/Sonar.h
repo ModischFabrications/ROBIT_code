@@ -9,6 +9,7 @@ class Sonar {
     Ultrasonic ultrasonic = Ultrasonic();
 
   public:
+    // too many measurements will increase time cost dramatically
     const uint8_t n_measurements = 10;
     static constexpr float SOUND_SPEED = 29.15f;
     static const uint8_t MAX_DISTANCE = 100;
