@@ -27,7 +27,7 @@ class Ultrasonic {
     uint16_t poll_time_us() const {
         // trigger measurement
         digitalWrite(PIN_TRG, HIGH);
-        delayMicroseconds(20); // experiment a bit, at least 10 us
+        delayMicroseconds(10); // experiment a bit, at least 10 us
         digitalWrite(PIN_TRG, LOW);
 
         // longer echo time means an object is further away than allowed or nothing was detected.

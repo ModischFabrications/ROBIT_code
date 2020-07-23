@@ -108,6 +108,9 @@ void startSearch() {
 }
 
 void startReverse() {
+    // reset in case a line was detected while picking up
+    servo.moveUp();
+
     motors.move(-0.5);
     reverseUntilTime = millis() + reverseForMS;
 
@@ -177,7 +180,7 @@ void line_found() {
 void showDistance(uint8_t distance) {
     const uint8_t max_scale = 255;
     uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * max_scale;
-    DEBUG_PRINTLN(rel_distance);
+    // DEBUG_PRINTLN(rel_distance);
     // nice blending with diverse colors
     CRGB new_color = blend(CRGB::DarkGreen, CRGB::SteelBlue, rel_distance);
     // adjust brightness to improve perception of scale
@@ -223,8 +226,8 @@ void setup() {
 
 void loop() {
     // keep movement straight
-    motors.update();
     gyro.update();
+    motors.update();
     servo.update();
 
     switch (state) {
