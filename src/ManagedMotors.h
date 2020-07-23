@@ -11,7 +11,7 @@ class ManagedMotors {
     // experimental results
     const int8_t MOTOR_RIGHT_TUNING = -10;
 
-    const uint8_t P_REGULATION_FACTOR = 40;
+    const uint8_t P_REGULATION_FACTOR = 50; // smaller is stronger compensation
     const float MAX_TRIM_FACTOR = 0.5f;
 
     Motors motors = Motors();

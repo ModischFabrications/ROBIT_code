@@ -16,7 +16,7 @@ public:
     // endstops tuned for specific servo
     servo.setMin(900);
     servo.setMax(2100);
-    servo.setSpeed(7);
+    servo.setSpeed(10);
     servo.setInitialPosition(0.9);
     servo.setDetachAtMax(true);
 
