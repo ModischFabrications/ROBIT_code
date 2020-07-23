@@ -175,10 +175,13 @@ void line_found() {
 }
 
 void showDistance(uint8_t distance) {
-    uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * 255;
+    const uint8_t max_scale = 255;
+    uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * max_scale;
     DEBUG_PRINTLN(rel_distance);
-    CRGB new_color = CRGB::DarkGreen;
-    new_color.nscale8_video(255-rel_distance);
+    // nice blending with diverse colors
+    CRGB new_color = blend(CRGB::DarkGreen, CRGB::SteelBlue, rel_distance);
+    // adjust brightness to improve perception of scale
+    new_color.nscale8_video((max_scale-rel_distance)/2);
     // 0 is unused, better than hiding currently active state
     lights.leds[0] = new_color;
     FastLED.show();
