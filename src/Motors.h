@@ -27,11 +27,6 @@ class Motors {
 
         analogWrite(active_pin, speed);
         digitalWrite(disabled_pin, LOW);
-
-        /* DEBUG_PRINT("motor: ");
-        DEBUG_PRINT(forwards);
-        DEBUG_PRINT(" ");
-        DEBUG_PRINTLN(speed); */
     }
 
   public:
@@ -62,6 +57,9 @@ class Motors {
         speed = d == 0 ? 0 : speed;
 
         setMotorSpeed(PINS_LEFT, d > 0, speed);
+/*         DEBUG_PRINT("left motor speed: ");
+        DEBUG_PRINT(d > 0 ? "+" : "-");
+        DEBUG_PRINTLN(speed); */
     }
 
     float getLeftSpeed() const { return this->leftSpeed; }
@@ -80,6 +78,9 @@ class Motors {
         speed = d == 0 ? 0 : speed;
 
         setMotorSpeed(PINS_RIGHT, d > 0, speed);
+/*         DEBUG_PRINT("right motor speed: ");
+        DEBUG_PRINT(d > 0 ? "+" : "-");
+        DEBUG_PRINTLN(speed); */
     }
 
     float getRightSpeed() const { return this->rightSpeed; }
