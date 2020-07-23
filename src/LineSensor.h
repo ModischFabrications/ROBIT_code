@@ -16,8 +16,18 @@ class LineSensor {
       pinMode(PIN_LINESENSOR, INPUT);
     }
 
+    /**
+     * monitor line sensor to detect out of bounds
+     * */
     void registerListener(void (*listener)(void)) {
         attachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR), listener, light_floor ? FALLING : RISING);
+    }
+
+    /**
+     * stop monitoring, eg. if everything is done. 
+     * */
+    void removeListener() {
+      detachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR));
     }
 
     /**

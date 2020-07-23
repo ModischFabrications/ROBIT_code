@@ -43,10 +43,11 @@ enum FSMstates : uint8_t {
 
 volatile FSMstates state = initState;
 
-const uint8_t LED_ERR = 9;
+typedef void (*async)();
+volatile async async_call = nullptr;
 
 const uint8_t LED_HB = 8;
-const CRGB color_HB = CRGB::Orange;
+const uint8_t LED_ERR = 9;
 
 const uint16_t targetLoopDuration = 10;
 const uint8_t HeartbeatsPerMinute = 60;
@@ -65,6 +66,37 @@ const uint8_t pickupDistance = 5;
 
 void (*restart)(void) = 0;
 
+void showState(FSMstates state) {
+    // clear old all old values to prevent undefined states
+    fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
+    lights.leds[(uint8_t)state] = CRGB::Blue;
+    FastLED.show();
+}
+
+/**
+ * Use this to schedule complex calls from ISRs
+ * */
+void callAsync(async function) {
+    async_call = function;
+}
+
+void setState(FSMstates new_state) {
+    state = new_state;
+    showState(state);
+}
+
+void showError(const CRGB color, const __FlashStringHelper* msg) {
+    lights.leds[LED_ERR] = color;
+    DEBUG_PRINT("[Error] ");
+    DEBUG_PRINTLN(msg);
+    motors.stop();
+    // prevent interrupt
+    state = initState;
+    // wait for the user to see it
+    delay(10000);
+    restart();
+}
+
 void startSearch() {
     initial_angle = gyro.getAngleZ();
     smallestDistanceFound = Sonar::MAX_DISTANCE;
@@ -72,83 +104,87 @@ void startSearch() {
 
     motors.turn(0.1);
 
-    state = searchState;
+    setState(searchState);
 }
 
 void startReverse() {
     motors.move(-0.5);
     reverseUntilTime = millis() + reverseForMS;
 
-    state = reverseState;
+    setState(reverseState);
 }
 
 void startAlign() {
     // TODO: find shortest turn direction (see #42)
     motors.turn(-0.1);
 
-    state = alignToTargetState;
+    setState(alignToTargetState);
 }
 
 void startApproach() {
     distanceAtLost = smallestDistanceFound;
     motors.move(0.1);
 
-    state = approachState;
+    setState(approachState);
 }
 
 void startAdjust() {
+    // moving a bit closer helps finding it again
+    motors.move(0.1);
+    delay(500);
     motors.stop();
     adjustingClockwise = false;
     // update to current angle
     angleOfSmallestDistance = gyro.getAngleZ();
     // begin by turning counterclockwise
     motors.turn(-0.1);
-    state = adjustState;
+    setState(adjustState);
 }
 
 void startPickup() {
     motors.stop();
     servo.moveDown();
-    state = pickupState;
+    setState(pickupState);
 }
 
 void startReturn() {
     motors.move(0.5);
-    state = returnState;
+    setState(returnState);
 }
 
 void startFinal() {
+    line.removeListener();
     motors.stop();
-    state = finalState;
+    setState(finalState);
     DEBUG_PRINTLN("We did it!");
 }
 
 void line_found() {
-    if (state == finalState)
+    // don't do anything expensive here or this will crash the processor
+    if (state == finalState || state == reverseState || state == initState)
         return;
     if (state == returnState) {
-        startFinal();
+        callAsync(startFinal);
         // done!
         return;
     }
 
     // assume we only hit the line on forward movements
-    startReverse();
+    // this won't look for a better target but at least it prevents runoffs
+    callAsync(startReverse);
 }
 
-void showState(FSMstates state) {
-    fill_solid(lights.leds, (uint8_t)finalState, CRGB::Black);
-    lights.leds[(uint8_t)state] = CRGB::Blue;
+void showDistance(uint8_t distance) {
+    const uint8_t max_scale = 255;
+    uint8_t rel_distance = ((float)distance / sonar.MAX_DISTANCE) * max_scale;
+    DEBUG_PRINTLN(rel_distance);
+    // nice blending with diverse colors
+    CRGB new_color = blend(CRGB::DarkGreen, CRGB::SteelBlue, rel_distance);
+    // adjust brightness to improve perception of scale
+    new_color.nscale8_video((max_scale-rel_distance)/2);
+    // 0 is unused, better than hiding currently active state
+    lights.leds[0] = new_color;
     FastLED.show();
-}
-
-void showError(const CRGB color, const __FlashStringHelper* msg) {
-    lights.leds[LED_ERR] = color;
-    DEBUG_PRINT("[Error] ");
-    DEBUG_PRINTLN(msg);
-    // wait for the user to see it
-    delay(10000);
-    restart();
 }
 
 void setup() {
@@ -161,7 +197,7 @@ void setup() {
     lights.begin();
     gyro.begin();
     magnet.begin();
-    line.begin(false);
+    line.begin(true);
 
     line.registerListener(line_found);
 
@@ -186,10 +222,10 @@ void setup() {
 }
 
 void loop() {
+    // keep movement straight
+    motors.update();
     gyro.update();
     servo.update();
-
-    showState(state);
 
     switch (state) {
     case initState: {
@@ -199,7 +235,8 @@ void loop() {
     } break;
 
     case searchState: {
-        uint16_t current_distance = sonar.get_distance();
+        uint8_t current_distance = sonar.get_min_distance();
+        showDistance(current_distance);
         int16_t current_angle = gyro.getAngleZ();
         if (current_distance < smallestDistanceFound) {
             // found something closer
@@ -227,29 +264,31 @@ void loop() {
     } break;
 
     case approachState: {
-        uint16_t distance = sonar.get_min_distance();
+        uint16_t current_distance = sonar.get_min_distance();
+        showDistance(current_distance);
 
         // anything else can't be our treasure and needs to be ignored
-        if (distance > smallestDistanceFound + 10) {
+        if (current_distance > smallestDistanceFound + 10) {
             DEBUG_PRINT("lost it at ");
             DEBUG_PRINTLN(distanceAtLost);
             startAdjust();
             return;
         }
 
-        if (distance <= pickupDistance) {
+        if (current_distance <= pickupDistance) {
             // reached it
             startPickup();
             return;
         }
 
         // decrease distance while searching
-        distanceAtLost = distance;
+        distanceAtLost = current_distance;
 
     } break;
 
     case adjustState: {
         uint16_t current_distance = sonar.get_min_distance();
+        showDistance(current_distance);
         int16_t current_angle = gyro.getAngleZ();
 
         if (current_distance < distanceAtLost + 10) {
@@ -308,11 +347,15 @@ void loop() {
     } break;
     }
 
-    // keep movement straight
-    motors.update();
+    // async setter for ISRs
+    if (async_call != nullptr) {
+        DEBUG_PRINTLN("Calling async function");
+        async_call();
+        async_call = nullptr;
+    }
 
-    // fade between black and orange to look like a heartbeat
-    CRGB curr_color = blend(CRGB::Black, color_HB, beatsin8(HeartbeatsPerMinute, 0, 255));
+    // fade between black and orange to look like a heartbeat; don't use max brightness
+    CRGB curr_color = blend(CRGB::Black, CRGB::DarkOrange, beatsin8(HeartbeatsPerMinute, 0, 150));
     lights.leds[LED_HB] = curr_color;
     FastLED.show();
 
