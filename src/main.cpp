@@ -108,6 +108,9 @@ void startSearch() {
 }
 
 void startReverse() {
+    // reset in case a line was detected while picking up
+    servo.moveUp();
+
     motors.move(-0.5);
     reverseUntilTime = millis() + reverseForMS;
 
