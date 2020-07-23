@@ -9,9 +9,9 @@ class ManagedMotors {
     // level 2 convenience class for Motors
   private:
     // experimental results
-    const int8_t MOTOR_RIGHT_TUNING = -10;
+    const int8_t MOTOR_RIGHT_TUNING = -15;
 
-    const uint8_t P_REGULATION_FACTOR = 50; // smaller is stronger compensation
+    const uint8_t P_REGULATION_FACTOR = 40; // smaller is stronger compensation
     const float MAX_TRIM_FACTOR = 0.5f;
 
     Motors motors = Motors();
@@ -84,6 +84,7 @@ class ManagedMotors {
      * */
     void update() {
       if (trim) {
+        gyro.update();  // better safe than sorry
         int16_t curr_angle = gyro.getAngleZ();
         if (curr_angle != targetAngle) {
             trim_direction(curr_angle, targetAngle);
