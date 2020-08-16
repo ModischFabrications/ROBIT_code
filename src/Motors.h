@@ -1,3 +1,14 @@
+/**
+ * \class Motors
+ *
+ * \brief Level 1 class for Motors
+ *
+ * This class allows the control of the two dc motors separately by setting
+ * their respective speed as float between -1.0 and 1.0. Previously the setup
+ * method 'begin' should be called to initialise the motor pins. Dedicated
+ * getter methods return the respective speed setting.
+ */
+
 #pragma once
 
 #include <Arduino.h>
