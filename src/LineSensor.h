@@ -1,3 +1,17 @@
+/**
+ * \class LineSensor
+ *
+ * \brief Level 1 class for Line sensor
+ *
+ * This class allows reading the state of the Line sensor, therefore the
+ * function 'detected' is used. It also supports the registration of a listener
+ * based on a interrupt pin. To configure a function which will be called the
+ * function 'registerListener' is used. 'removeListener' detaches the registered
+ * listener. Previously the setup function 'begin' should be called to
+ * initialise the sensor pin and to set the floor color type.
+ */
+
+
 #pragma once
 
 #include <Arduino.h>
@@ -24,7 +38,7 @@ class LineSensor {
     }
 
     /**
-     * stop monitoring, eg. if everything is done. 
+     * stop monitoring, eg. if everything is done.
      * */
     void removeListener() {
       detachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR));

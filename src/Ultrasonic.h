@@ -1,3 +1,13 @@
+/**
+ * \class Ultrasonic
+ *
+ * \brief Level 1 class for Ultrasonic sensor
+ *
+ * This class allows the time measurement from triggering to detection of the
+ * ultrasonic reflection back at the sensor. Previously the setup function
+ * 'begin' should be called to initialise the sensor pins.
+ */
+
 #pragma once
 
 #include <Arduino.h>

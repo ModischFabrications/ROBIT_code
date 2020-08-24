@@ -1,3 +1,19 @@
+/**
+ * \class ManagedMotors
+ *
+ * \brief Level 2 class for Motors
+ *
+ * This class is based on Motors.h and the Gyro.h, it extends the class by five
+ * functions which make it easier to control the motors to drive the robot in a
+ * straight line and turn in a controlled speed, therefore it uses the z angle
+ * of the gyroscope.
+ * The function 'begin' should be called to initialise the
+ * motos pins.
+ * The function 'update' has to be called in every update loop.
+ * To move forwards and backwards the function 'move' with a float parameter
+ * between -1.0 and 1.0 is used.
+ */
+
 #pragma once
 
 #include <Arduino.h>

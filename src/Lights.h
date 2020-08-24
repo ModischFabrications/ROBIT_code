@@ -1,3 +1,15 @@
+/**
+ * \class Lights
+ *
+ * \brief Level 2 class for LEDs
+ *
+ * This class is based on FastLED.h and it allows the control of the LEDs and
+ * setting effects. The function 'helloPower' is startup effect which runs a
+ * single pixel across the LED strip. Previously the setup
+ * function 'begin' should be called to initialise the LED pins, set the number
+ * of LEDS and their power limit.
+ */
+
 #pragma once
 
 #include <Arduino.h>
