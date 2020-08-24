@@ -1,3 +1,15 @@
+/**
+ * \class Gyro
+ *
+ * \brief Level 2 class for MPU6050 sensor
+ *
+ * This class is based on MPU6050_tockn.h and it allows reading of the z-angle
+ * (yaw), therefore the function 'getAngleZ' is used. Previously the setup
+ * function 'begin' should be called to initialise the sensor and set a
+ * predefined offset.
+ * The function 'update' has to be called in every update loop.
+ */
+
 #pragma once
 
 #include <Arduino.h>
@@ -29,7 +41,7 @@ class Gyro {
     }
 
     /**
-     * Nearly full range of int16. multiple turns possible. 
+     * Nearly full range of int16. multiple turns possible.
      * Negative values and values larger than 360 are possible!
      * positive values in clockwise direction.
      * */
