@@ -3,13 +3,11 @@
  *
  * \brief Level 2 class for Servo
  *
- * This class is based on Servo.h, it extends the class by five functions which
- * make it possible to move the servo within the physical possible positions in
- * a controlled speed. The function 'begin' should be called to initialise the
- * servo pins and to set the limit positions.
- * The function 'update' has to be called in every update loop.
- * To move the servo to its limit positions the function 'moveDown' and 'moveUp'
- * is used.
+ * This class is based on Servo.h.It extends Servo.h by constraining the
+ * possible range and giving a finer control over movement speeds. Call 'begin'
+ * prior to usage to initialise the servo pins and to set the limit positions.
+ * The function 'update' has to be called in every update loop to interpolate
+ * between the set positions.
  */
 
 #pragma once
@@ -44,10 +42,16 @@ public:
     SlowMotionServo::update();
   }
 
+  /**
+   * move to lower limit position
+   * */
   void moveDown() {
     servo.goToMin();
   }
 
+  /**
+   * move to upper limit position
+   * */
   void moveUp() {
     servo.goToMax();
   }
