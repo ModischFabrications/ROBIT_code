@@ -20,7 +20,7 @@ MPU6050 mpu6050(Wire);
 
 class Gyro {
   private:
-    // TODO: move MPU here! Some weird error: "Wire is not a type"
+    // can't move MPU here! Some weird error: "Wire is not a type"
 
   public:
     void begin() {

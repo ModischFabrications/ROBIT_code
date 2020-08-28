@@ -48,8 +48,6 @@ class Lights {
      * Test LEDs, timing and power supply
      * */
     void helloPower() {
-        // TODO: use fading? might even want to use a rainbow fade?
-        // -> check FastLED buildin animations
         for (uint8_t i = 0; i < N_LEDS; i++) {
             leds[i] = CRGB::Red;
             FastLED.show();
@@ -63,5 +61,5 @@ class Lights {
      * */
     void delay(uint32_t time_ms) { FastLED.delay(time_ms); }
 
-    // TODO: allow access to fastled methods? indirection here gives no value ...
+    // access to fastled methods because indirection here gives no value ...
 };
