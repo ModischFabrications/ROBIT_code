@@ -3,9 +3,9 @@
  *
  * \brief Level 1 class for Magnet sensor
  *
- * This class allows reading the state of the Magnet sensor, therefore the
- * function 'detected' is used. Previously the setup function 'begin' should be
- * called to initialise the sensor pin.
+ * This class can be used to read the state of the Magnet sensor, therefore the
+ * function 'detected' is used. Call 'begin' prior to usage to initialise the
+ * sensor pin.
  */
 
 #pragma once

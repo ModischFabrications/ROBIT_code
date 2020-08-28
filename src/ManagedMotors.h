@@ -3,15 +3,11 @@
  *
  * \brief Level 2 class for Motors
  *
- * This class is based on Motors.h and the Gyro.h, it extends the class by five
- * functions which make it easier to control the motors to drive the robot in a
- * straight line and turn in a controlled speed, therefore it uses the z angle
- * of the gyroscope.
- * The function 'begin' should be called to initialise the
- * motos pins.
- * The function 'update' has to be called in every update loop.
- * To move forwards and backwards the function 'move' with a float parameter
- * between -1.0 and 1.0 is used.
+ * This class is based on Motors.h and the Gyro.h. It improves on their methods
+ * by bundling calls to make movement control easier and implements a basic
+ * control loop to stabilize straight movements. Call 'begin' prior to usage to
+ * initialise the motor pins. The function 'update' has to be called in every
+ * update loop to allow the control loop to correct for deviations.
  */
 
 #pragma once
@@ -64,6 +60,7 @@ class ManagedMotors {
 
     /**
      * positive turns right. This won't always turn with equal speed!
+     * 'speed' should be a float parameter between -1.0 and 1.0
      * */
     void turn(float speed) {
         speed = constrain(speed, -1, 1);
@@ -74,6 +71,7 @@ class ManagedMotors {
     /**
      * positive is forwards, reverse is possible.
      * This is a controlled movement, deviations will be corrected internally.
+     * 'speed' should be a float parameter between -1.0 and 1.0
      * */
     void move(float speed) {
         if (speed == 0) {

@@ -3,12 +3,9 @@
  *
  * \brief Level 2 class for Ultrasonic sensor
  *
- * This class is based on Ultrasonic.h, it extends the class by two functions
- * which calculate the distance from the measured durations of the reflection.
- * The function 'get_raw_distance' sends only one sonar ping the function
- * 'get_min_distance' takes the average of 'n_measurements' pings.
- * Previously the setup function 'begin' should be called to initialise the sensor
- * pins.
+ * This class is based on Ultrasonic.h, It supports calculating the distance
+ * from the measured durations of the reflection. Call 'begin' prior to usage to
+ * initialise the sensor pins.
  */
 
 #pragma once
@@ -30,6 +27,10 @@ class Sonar {
 
     void begin() { ultrasonic.begin(); }
 
+
+    /**
+    * calculating distance by sending only one sonar ping
+    * */
     uint8_t get_raw_distance() const {
         uint16_t time_us = ultrasonic.poll_time_us();
         uint8_t distance_cm = (time_us / 2) / SOUND_SPEED;
@@ -39,6 +40,9 @@ class Sonar {
         return distance_cm;
     }
 
+    /**
+    * calculating distance by taking the average of 'n_measurements' pings
+    * */
     uint8_t get_min_distance() const {
         uint8_t min_distance = MAX_DISTANCE;
 
@@ -50,8 +54,6 @@ class Sonar {
             delay(1);
         }
 
-/*         DEBUG_PRINT("Sonar distance: ");
-        DEBUG_PRINTLN(min_distance); */
         return min_distance;
     }
 };

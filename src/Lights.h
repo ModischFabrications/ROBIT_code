@@ -4,10 +4,10 @@
  * \brief Level 2 class for LEDs
  *
  * This class is based on FastLED.h and it allows the control of the LEDs and
- * setting effects. The function 'helloPower' is startup effect which runs a
- * single pixel across the LED strip. Previously the setup
- * function 'begin' should be called to initialise the LED pins, set the number
- * of LEDS and their power limit.
+ * setting effects. The function 'helloPower' runs a single pixel across the LED
+ * strip and can be used as a startup effect to check for defects. Call 'begin'
+ * prior to usage to initialise the LED pins, set the number of LEDS and their
+ * power limit.
  */
 
 #pragma once
@@ -61,5 +61,5 @@ class Lights {
      * */
     void delay(uint32_t time_ms) { FastLED.delay(time_ms); }
 
-    // access to fastled methods because indirection here gives no value ...
+    // access to fastled methods is allowed because we can't hide it and indirection gives no value ...
 };

@@ -4,9 +4,8 @@
  * \brief Level 1 class for Motors
  *
  * This class allows the control of the two dc motors separately by setting
- * their respective speed as float values between -1.0 and 1.0. Previously the
- * setup function 'begin' should be called to initialise the motor pins.
- * Dedicated getter functions return the respective speed setting.
+ * their respective speed. Call 'begin' prior to usage to initialise the motor
+ * pins.
  */
 
 #pragma once
@@ -68,11 +67,11 @@ class Motors {
         speed = d == 0 ? 0 : speed;
 
         setMotorSpeed(PINS_LEFT, d > 0, speed);
-/*         DEBUG_PRINT("left motor speed: ");
-        DEBUG_PRINT(d > 0 ? "+" : "-");
-        DEBUG_PRINTLN(speed); */
     }
 
+    /**
+     * get speed of left motor in percentage.
+     */
     float getLeftSpeed() const { return this->leftSpeed; }
 
     /**
@@ -89,10 +88,10 @@ class Motors {
         speed = d == 0 ? 0 : speed;
 
         setMotorSpeed(PINS_RIGHT, d > 0, speed);
-/*         DEBUG_PRINT("right motor speed: ");
-        DEBUG_PRINT(d > 0 ? "+" : "-");
-        DEBUG_PRINTLN(speed); */
     }
 
+    /**
+     * get speed of right motor in percentage.
+     */
     float getRightSpeed() const { return this->rightSpeed; }
 };
