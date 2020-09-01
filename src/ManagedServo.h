@@ -1,3 +1,15 @@
+/**
+ * \class ManagedServo
+ *
+ * \brief Level 2 class for Servo
+ *
+ * This class is based on Servo.h.It extends Servo.h by constraining the
+ * possible range and giving a finer control over movement speeds. Call 'begin'
+ * prior to usage to initialise the servo pins and to set the limit positions.
+ * The function 'update' has to be called in every update loop to interpolate
+ * between the set positions.
+ */
+
 #pragma once
 
 #include <Arduino.h>
@@ -30,10 +42,16 @@ public:
     SlowMotionServo::update();
   }
 
+  /**
+   * move to lower limit position
+   * */
   void moveDown() {
     servo.goToMin();
   }
 
+  /**
+   * move to upper limit position
+   * */
   void moveUp() {
     servo.goToMax();
   }
