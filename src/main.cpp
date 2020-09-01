@@ -118,7 +118,6 @@ void startReverse() {
 }
 
 void startAlign() {
-    // TODO: find shortest turn direction (see #42)
     motors.turn(-0.1);
 
     setState(alignToTargetState);

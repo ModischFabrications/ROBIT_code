@@ -1,3 +1,15 @@
+/**
+ * \class Ultrasonic
+ *
+ * \brief Level 1 class for Ultrasonic sensor
+ *
+ * This class can trigger a ultrasonic ping and measure it's round trip time.
+ * This can be used to measure distances of obstacles. Be aware that ultrasonic
+ * sensors need a good surface for reflections, look into "radar cross sections"
+ * for more hints about their design. Call 'begin' prior to usage to initialise
+ * the sensor pins.
+ */
+
 #pragma once
 
 #include <Arduino.h>

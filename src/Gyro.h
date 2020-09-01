@@ -1,3 +1,13 @@
+/**
+ * \class Gyro
+ *
+ * \brief Level 2 class for MPU6050 sensor
+ *
+ * This class is based on MPU6050_tockn.h. It supports reading the z-angle (yaw).
+ * Call 'begin' prior to usage to initialise the sensor and set a predefined
+ * offset. The function 'update' has to be called in every update loop.
+ */
+
 #pragma once
 
 #include <Arduino.h>
@@ -8,7 +18,7 @@ MPU6050 mpu6050(Wire);
 
 class Gyro {
   private:
-    // TODO: move MPU here! Some weird error: "Wire is not a type"
+    // can't move MPU here! Some weird error: "Wire is not a type"
 
   public:
     void begin() {
@@ -17,9 +27,6 @@ class Gyro {
         // prevent strange init behaviour
         mpu6050.begin();
         // calculcated from mpu6050.calcGyroOffsets(true);
-        // old MPU6050 with red LED
-        //mpu6050.setGyroOffsets(-2.70, 0.94, -0.40);
-        // new MPU6050 with green LED
         mpu6050.setGyroOffsets(-1.40, 0.67, 0.63);
         delay(100);
     }
@@ -29,7 +36,7 @@ class Gyro {
     }
 
     /**
-     * Nearly full range of int16. multiple turns possible. 
+     * Nearly full range of int16. multiple turns possible.
      * Negative values and values larger than 360 are possible!
      * positive values in clockwise direction.
      * */

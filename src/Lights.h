@@ -1,3 +1,15 @@
+/**
+ * \class Lights
+ *
+ * \brief Level 2 class for LEDs
+ *
+ * This class is based on FastLED.h and it allows the control of the LEDs and
+ * setting effects. The function 'helloPower' runs a single pixel across the LED
+ * strip and can be used as a startup effect to check for defects. Call 'begin'
+ * prior to usage to initialise the LED pins, set the number of LEDS and their
+ * power limit.
+ */
+
 #pragma once
 
 #include <Arduino.h>
@@ -36,8 +48,6 @@ class Lights {
      * Test LEDs, timing and power supply
      * */
     void helloPower() {
-        // TODO: use fading? might even want to use a rainbow fade?
-        // -> check FastLED buildin animations
         for (uint8_t i = 0; i < N_LEDS; i++) {
             leds[i] = CRGB::Red;
             FastLED.show();
@@ -51,5 +61,5 @@ class Lights {
      * */
     void delay(uint32_t time_ms) { FastLED.delay(time_ms); }
 
-    // TODO: allow access to fastled methods? indirection here gives no value ...
+    // access to fastled methods is allowed because we can't hide it and indirection gives no value ...
 };

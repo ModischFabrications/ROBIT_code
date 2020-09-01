@@ -1,3 +1,15 @@
+/**
+ * \class LineSensor
+ *
+ * \brief Level 1 class for Line sensor
+ *
+ * This class can be used to read the state of the line sensor. It supports
+ * callbacks from an interrupt to be notified on changes, see 'registerListener'.
+ * 'removeListener' detaches the registered listener. Call 'begin' prior to
+ * usage to initialise the sensor pin and to set the floor color type.
+ */
+
+
 #pragma once
 
 #include <Arduino.h>
@@ -24,7 +36,7 @@ class LineSensor {
     }
 
     /**
-     * stop monitoring, eg. if everything is done. 
+     * stop monitoring, eg. if everything is done.
      * */
     void removeListener() {
       detachInterrupt(digitalPinToInterrupt(PIN_LINESENSOR));
